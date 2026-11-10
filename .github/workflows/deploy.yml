@@ -50,9 +50,9 @@ jobs:
         run: echo "Approved in the production environment."
 
   # Which commit to build. A push or manual run builds its own commit, once `gate` approved it. An
-  # unattended refresh builds the commit of the newest run of this workflow on main whose `gate`
-  # job succeeded, that is, the last commit you approved, and only if that commit is in main's
-  # history. Workflow runs and their jobs cannot be created through the API, unlike deployment
+  # unattended refresh builds the commit of the newest push or manual run of this workflow on main
+  # whose `gate` job succeeded, that is, the last commit you approved, and only if that commit is
+  # in main's history. Workflow runs and their jobs cannot be created through the API, unlike deployment
   # records, so a collaborator cannot fake an approval; a rejected or pending approval never ships.
   ref:
     needs: gate
@@ -81,12 +81,19 @@ jobs:
           if [ "$EVENT" = push ] || [ "$EVENT" = workflow_dispatch ]; then
             sha="$HEAD_SHA"
           else
+            # Push and manual runs only, filtered by GitHub (the refreshes themselves never crowd
+            # them out), newest first. The run's own conclusion does not matter: an approved run
+            # whose deploy was cancelled behind a newer one is still the latest approval.
+            runs=$(for ev in push workflow_dispatch; do
+              gh api "repos/$REPO/actions/workflows/deploy.yml/runs?branch=main&event=$ev&per_page=30" \
+                --jq '.workflow_runs[] | "\(.created_at) \(.id):\(.head_sha)"'
+            done | sort -r)
             sha=""
-            for row in $(gh api "repos/$REPO/actions/workflows/deploy.yml/runs?branch=main&status=success&per_page=30" \
-                --jq '.workflow_runs[] | select(.event == "push" or .event == "workflow_dispatch") | "\(.id):\(.head_sha)"'); do
+            while read -r _ row; do
+              [ -n "$row" ] || continue
               gate=$(gh api "repos/$REPO/actions/runs/${row%%:*}/jobs" --jq '[.jobs[] | select(.name == "gate") | .conclusion][0] // ""')
               if [ "$gate" = success ]; then sha="${row#*:}"; break; fi
-            done
+            done <<< "$runs"
             if [ -z "$sha" ]; then
               echo "::error::No approved run of this workflow on main yet. Approve a push or a manual run first."
               exit 1
