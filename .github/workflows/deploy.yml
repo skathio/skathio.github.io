@@ -12,8 +12,8 @@
 # rebuild and the `project-released` ping only re-read the repos' manifests, which each repo
 # already ships through its own reviewed pipeline, so they run unattended; gating them would
 # stall the homepage between your approvals.
-# The unattended runs build the commit of the last approved production deployment, never an
-# unapproved tip of main (see the `ref` job).
+# The unattended runs build the last commit you approved on main, never an unapproved tip of
+# main (see the `ref` job).
 # The dispatch payload is never read: the build always reads the repos itself, so a ping can
 # only make the homepage rebuild sooner, not change what it shows.
 #
@@ -37,9 +37,6 @@ on:
 
 permissions: {}
 
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
   # One release, one approval: this job waits for the `production` Environment's owner approval.
@@ -53,18 +50,26 @@ jobs:
         run: echo "Approved in the production environment."
 
   # Which commit to build. A push or manual run builds its own commit, once `gate` approved it. An
-  # unattended refresh builds the commit of the last approved production deployment, not the tip of
-  # main, so a change whose approval was rejected, or is still pending, never ships through the
-  # schedule or a ping.
+  # unattended refresh builds the commit of the newest run of this workflow on main whose `gate`
+  # job succeeded, that is, the last commit you approved, and only if that commit is in main's
+  # history. Workflow runs and their jobs cannot be created through the API, unlike deployment
+  # records, so a collaborator cannot fake an approval; a rejected or pending approval never ships.
   ref:
     needs: gate
     if: ${{ !cancelled() && (needs.gate.result == 'success' || (needs.gate.result == 'skipped' && (github.event_name == 'schedule' || github.event_name == 'repository_dispatch'))) }}
     runs-on: ubuntu-latest
     permissions:
-      deployments: read
+      actions: read
+      contents: read
     outputs:
       sha: ${{ steps.pick.outputs.sha }}
     steps:
+      # actions/checkout v4.2.2 — main with full history, for the ancestry check
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
       - id: pick
         env:
           GH_TOKEN: ${{ github.token }}
@@ -77,16 +82,18 @@ jobs:
             sha="$HEAD_SHA"
           else
             sha=""
-            for row in $(gh api "repos/$REPO/deployments?environment=production&per_page=30" --jq '.[] | "\(.id):\(.sha)"'); do
-              state=$(gh api "repos/$REPO/deployments/${row%%:*}/statuses?per_page=1" --jq '.[0].state // ""')
-              if [ "$state" = success ]; then sha="${row#*:}"; break; fi
+            for row in $(gh api "repos/$REPO/actions/workflows/deploy.yml/runs?branch=main&status=success&per_page=30" \
+                --jq '.workflow_runs[] | select(.event == "push" or .event == "workflow_dispatch") | "\(.id):\(.head_sha)"'); do
+              gate=$(gh api "repos/$REPO/actions/runs/${row%%:*}/jobs" --jq '[.jobs[] | select(.name == "gate") | .conclusion][0] // ""')
+              if [ "$gate" = success ]; then sha="${row#*:}"; break; fi
             done
             if [ -z "$sha" ]; then
-              echo "::error::No approved production deployment yet. Approve a push or a manual run of this workflow first."
+              echo "::error::No approved run of this workflow on main yet. Approve a push or a manual run first."
               exit 1
             fi
           fi
           if ! printf '%s' "$sha" | grep -Eq '^[0-9a-f]{40}$'; then echo "::error::not a commit SHA: $sha"; exit 1; fi
+          if ! git merge-base --is-ancestor "$sha" origin/main; then echo "::error::$sha is not in main's history"; exit 1; fi
           echo "Building $sha"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
@@ -120,6 +127,11 @@ jobs:
 
   deploy:
     needs: build
+    # One Pages deploy at a time. On this job only, so a run waiting at `gate` never holds the
+    # queue for the others.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     # `!cancelled()` because a skipped `gate` upstream would otherwise skip this job too; unlike
     # `always()` it still stops on a cancelled run.
     if: ${{ !cancelled() && needs.build.result == 'success' }}
