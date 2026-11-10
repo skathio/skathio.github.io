@@ -12,6 +12,8 @@
 # rebuild and the `project-released` ping only re-read the repos' manifests, which each repo
 # already ships through its own reviewed pipeline, so they run unattended; gating them would
 # stall the homepage between your approvals.
+# The unattended runs build the commit of the last approved production deployment, never an
+# unapproved tip of main (see the `ref` job).
 # The dispatch payload is never read: the build always reads the repos itself, so a ping can
 # only make the homepage rebuild sooner, not change what it shows.
 #
@@ -50,10 +52,47 @@ jobs:
       - name: Owner approval
         run: echo "Approved in the production environment."
 
-  build:
+  # Which commit to build. A push or manual run builds its own commit, once `gate` approved it. An
+  # unattended refresh builds the commit of the last approved production deployment, not the tip of
+  # main, so a change whose approval was rejected, or is still pending, never ships through the
+  # schedule or a ping.
+  ref:
     needs: gate
-    # After the approval at `gate` for a code change, or with `gate` skipped for a data refresh.
-    if: ${{ always() && (needs.gate.result == 'success' || (needs.gate.result == 'skipped' && (github.event_name == 'schedule' || github.event_name == 'repository_dispatch'))) }}
+    if: ${{ !cancelled() && (needs.gate.result == 'success' || (needs.gate.result == 'skipped' && (github.event_name == 'schedule' || github.event_name == 'repository_dispatch'))) }}
+    runs-on: ubuntu-latest
+    permissions:
+      deployments: read
+    outputs:
+      sha: ${{ steps.pick.outputs.sha }}
+    steps:
+      - id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          HEAD_SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = push ] || [ "$EVENT" = workflow_dispatch ]; then
+            sha="$HEAD_SHA"
+          else
+            sha=""
+            for row in $(gh api "repos/$REPO/deployments?environment=production&per_page=30" --jq '.[] | "\(.id):\(.sha)"'); do
+              state=$(gh api "repos/$REPO/deployments/${row%%:*}/statuses?per_page=1" --jq '.[0].state // ""')
+              if [ "$state" = success ]; then sha="${row#*:}"; break; fi
+            done
+            if [ -z "$sha" ]; then
+              echo "::error::No approved production deployment yet. Approve a push or a manual run of this workflow first."
+              exit 1
+            fi
+          fi
+          if ! printf '%s' "$sha" | grep -Eq '^[0-9a-f]{40}$'; then echo "::error::not a commit SHA: $sha"; exit 1; fi
+          echo "Building $sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: ref
+    if: ${{ !cancelled() && needs.ref.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -63,6 +102,7 @@ jobs:
       # actions/checkout v4.2.2
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
+          ref: ${{ needs.ref.outputs.sha }}
           persist-credentials: false
       # actions/setup-node (same pin as hashira's flows)
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
@@ -80,8 +120,9 @@ jobs:
 
   deploy:
     needs: build
-    # `always()` because a skipped `gate` upstream would otherwise skip this job too.
-    if: ${{ always() && needs.build.result == 'success' }}
+    # `!cancelled()` because a skipped `gate` upstream would otherwise skip this job too; unlike
+    # `always()` it still stops on a cancelled run.
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
