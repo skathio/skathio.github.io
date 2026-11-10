@@ -1,0 +1,10 @@
+# Weekly grouped updates: GitHub Actions pins, plus the package manifests this repo has.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns: ["*"]
