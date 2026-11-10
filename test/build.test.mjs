@@ -18,7 +18,7 @@ test('the site holds the page, the feed, the tiles and the brand', () => {
 test('no top-level entry of the site shadows a project path', () => {
   const out = tmp();
   writeSite({ out, org: 'skathio', projects: [p('somi'), p('rogue')], images: new Map(), generatedAt: '' });
-  const names = new Set(['somi', 'rogue', 'hinokami', 'stonks', 'hashira']);
+  const names = new Set(['somi', 'rogue', 'hinokami', 'maneki', 'hashira']);
   for (const entry of fs.readdirSync(out)) assert.ok(!names.has(entry.toLowerCase()), entry);
 });
 
@@ -29,6 +29,6 @@ test('a repo named like a homepage path is refused, even when it is not listed',
 
 test('the source tree has no top-level folder named after a project repo', () => {
   const root = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
-  const names = ['somi', 'rogue', 'hinokami', 'stonks', 'hashira', 'stonks-data', 'raven-js', 'ripper-js', 'jutsu-js', 'arise-js', 'arise-net', 'rogue-js'];
+  const names = ['somi', 'rogue', 'hinokami', 'maneki', 'hashira', 'maneki-data', 'stonks', 'stonks-data', 'raven-js', 'ripper-js', 'jutsu-js', 'arise-js', 'arise-net', 'rogue-js'];
   for (const entry of fs.readdirSync(root)) assert.ok(!names.includes(entry.toLowerCase()), entry);
 });
