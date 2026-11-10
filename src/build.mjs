@@ -38,8 +38,12 @@ export function fixtureClient(fixture) {
         if (f === undefined) return allow404 ? notFound() : Promise.reject(new Error(`GET ${p}: HTTP 404`));
         return { encoding: 'base64', content: Buffer.from(typeof f === 'string' ? f : JSON.stringify(f)).toString('base64') };
       }
-      if ((m = /^\/repos\/[^/]+\/([^/]+)\/releases\/latest$/.exec(p))) {
+      if ((m = /^\/repos\/[^/]+\/([^/]+)\/releases\?/.exec(p))) {
         const r = fixture.releases?.[m[1]];
+        return r === undefined ? [] : Array.isArray(r) ? r : [r];
+      }
+      if ((m = /^\/repos\/[^/]+\/([^/]+)\/releases\/latest$/.exec(p))) {
+        const r = fixture.latest?.[m[1]];
         return r ?? (allow404 ? notFound() : Promise.reject(new Error(`GET ${p}: HTTP 404`)));
       }
       throw new Error(`fixture has no answer for ${p}`);

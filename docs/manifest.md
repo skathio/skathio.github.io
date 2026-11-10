@@ -8,8 +8,10 @@ project is written into this repo.
 ```json
 {
   "name": "SoMi",
-  "tagline": "A workflow plugin for coding agents.",
-  "colour": "#b80f0f",
+  "kind": "Agent plugin",
+  "tagline": "Routes each request to the right workflow and model tier, and asks for a reviewer only when the diff calls for one.",
+  "tags": ["Claude Code", "Copilot CLI", "Node"],
+  "colour": "#ff4d4d",
   "image": "site/brand/somi-icon-800.png",
   "links": { "npm": "https://www.npmjs.com/package/@skathio/somi" }
 }
@@ -18,8 +20,10 @@ project is written into this repo.
 | Field | Rule | Without it |
 |---|---|---|
 | `name` | text, at most 40 characters | the repo name |
-| `tagline` | text, at most 160 characters | the repo description |
-| `colour` | hex colour, `#rrggbb` | grey |
+| `kind` | text, at most 24 characters: what it is ("Agent plugin", ".NET library") | none |
+| `tagline` | text, at most 160 characters: the card's description | the repo description |
+| `tags` | up to 5 pills of at most 20 characters each | none |
+| `colour` | hex colour, `#rrggbb`: the card's accent. Pick the bright shade used on dark; the light theme darkens it. | grey |
 | `image` | the branding image (see below) | a lettered mark in `colour` |
 | `links` | up to 4 `"label": "https://…"` pairs | none |
 | `listed` | `false` hides a public repo | `true` |

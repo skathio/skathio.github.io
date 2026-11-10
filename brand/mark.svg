@@ -1,9 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512" role="img" aria-label="skathio">
   <title>skathio</title>
-  <!-- The org mark: a homepage of tiles. Ink square, four tiles, one in the house red. -->
-  <rect width="64" height="64" rx="14" fill="#1b1d22"/>
-  <rect x="13" y="13" width="17" height="17" rx="4" fill="#b80f0f"/>
-  <rect x="34" y="13" width="17" height="17" rx="4" fill="#e8e9ec"/>
-  <rect x="13" y="34" width="17" height="17" rx="4" fill="#e8e9ec"/>
-  <rect x="34" y="34" width="17" height="17" rx="4" fill="#e8e9ec" fill-opacity=".45"/>
+  <!-- The org mark: the rune sowilo (ᛊ, an S) in SoMi's red, glowing in a dark disc. -->
+  <defs>
+    <radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#2a0a0c"/><stop offset="1" stop-color="#0b0c0f"/></radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <circle cx="32" cy="32" r="31" fill="url(#g)"/>
+  <circle cx="32" cy="32" r="27" fill="none" stroke="#b80f0f" stroke-width="2"/>
+  <path d="M26 15L39 27L25 37L38 49" fill="none" stroke="#ff4d4d" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
 </svg>
