@@ -6,6 +6,14 @@
 #   - repository_dispatch   : `project-released`, sent by a project repo after a release or a
 #                             manifest change, so its tile updates within minutes.
 #   - workflow_dispatch     : by hand.
+#
+# One release, one approval: a push to main or a manual run changes what the site's own code
+# does, so it waits at `gate` for the `production` Environment's owner approval. The scheduled
+# rebuild and the `project-released` ping only re-read the repos' manifests, which each repo
+# already ships through its own reviewed pipeline, so they run unattended; gating them would
+# stall the homepage between your approvals.
+# The unattended runs build the last commit you approved on main, never an unapproved tip of
+# main (see the `ref` job).
 # The dispatch payload is never read: the build always reads the repos itself, so a ping can
 # only make the homepage rebuild sooner, not change what it shows.
 #
@@ -29,12 +37,76 @@ on:
 
 permissions: {}
 
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
+  # One release, one approval: this job waits for the `production` Environment's owner approval.
+  gate:
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    environment: production
+    permissions: {}
+    steps:
+      - name: Owner approval
+        run: echo "Approved in the production environment."
+
+  # Which commit to build. A push or manual run builds its own commit, once `gate` approved it. An
+  # unattended refresh builds the commit of the newest push or manual run of this workflow on main
+  # whose `gate` job succeeded, that is, the last commit you approved, and only if that commit is
+  # in main's history. Workflow runs and their jobs cannot be created through the API, unlike deployment
+  # records, so a collaborator cannot fake an approval; a rejected or pending approval never ships.
+  ref:
+    needs: gate
+    if: ${{ !cancelled() && (needs.gate.result == 'success' || (needs.gate.result == 'skipped' && (github.event_name == 'schedule' || github.event_name == 'repository_dispatch'))) }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      sha: ${{ steps.pick.outputs.sha }}
+    steps:
+      # actions/checkout v4.2.2 — main with full history, for the ancestry check
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          HEAD_SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = push ] || [ "$EVENT" = workflow_dispatch ]; then
+            sha="$HEAD_SHA"
+          else
+            # Push and manual runs only, filtered by GitHub (the refreshes themselves never crowd
+            # them out), newest first. The run's own conclusion does not matter: an approved run
+            # whose deploy was cancelled behind a newer one is still the latest approval.
+            runs=$(for ev in push workflow_dispatch; do
+              gh api "repos/$REPO/actions/workflows/deploy.yml/runs?branch=main&event=$ev&per_page=30" \
+                --jq '.workflow_runs[] | "\(.created_at) \(.id):\(.head_sha)"'
+            done | sort -r)
+            sha=""
+            while read -r _ row; do
+              [ -n "$row" ] || continue
+              gate=$(gh api "repos/$REPO/actions/runs/${row%%:*}/jobs" --jq '[.jobs[] | select(.name == "gate") | .conclusion][0] // ""')
+              if [ "$gate" = success ]; then sha="${row#*:}"; break; fi
+            done <<< "$runs"
+            if [ -z "$sha" ]; then
+              echo "::error::No approved run of this workflow on main yet. Approve a push or a manual run first."
+              exit 1
+            fi
+          fi
+          if ! printf '%s' "$sha" | grep -Eq '^[0-9a-f]{40}$'; then echo "::error::not a commit SHA: $sha"; exit 1; fi
+          if ! git merge-base --is-ancestor "$sha" origin/main; then echo "::error::$sha is not in main's history"; exit 1; fi
+          echo "Building $sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: ref
+    if: ${{ !cancelled() && needs.ref.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -44,6 +116,7 @@ jobs:
       # actions/checkout v4.2.2
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
+          ref: ${{ needs.ref.outputs.sha }}
           persist-credentials: false
       # actions/setup-node (same pin as hashira's flows)
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
@@ -61,6 +134,14 @@ jobs:
 
   deploy:
     needs: build
+    # One Pages deploy at a time. On this job only, so a run waiting at `gate` never holds the
+    # queue for the others.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    # `!cancelled()` because a skipped `gate` upstream would otherwise skip this job too; unlike
+    # `always()` it still stops on a cancelled run.
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
