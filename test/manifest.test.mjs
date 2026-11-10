@@ -15,6 +15,17 @@ test('a full manifest validates with no errors', () => {
   assert.deepEqual(manifest.links, [{ label: 'npm', url: 'https://www.npmjs.com/package/x' }]);
 });
 
+test('kind and tags are short text, tags capped and de-duplicated', () => {
+  const ok = validateManifest({ kind: 'Agent plugin', tags: ['Node', 'Node', 'Claude Code'] });
+  assert.deepEqual(ok.errors, []);
+  assert.deepEqual(ok.manifest, { kind: 'Agent plugin', tags: ['Node', 'Claude Code'] });
+  assert.ok(validateManifest({ kind: 'x'.repeat(25) }).errors.length);
+  assert.ok(validateManifest({ tags: 'Node' }).errors.length);
+  assert.deepEqual(validateManifest({ tags: ['a', 3, 'x'.repeat(21)] }).manifest.tags, ['a']);
+  assert.equal(validateManifest({ tags: ['a', 'b', 'c', 'd', 'e', 'f'] }).manifest.tags.length, 5);
+  assert.deepEqual(validateManifest({ tags: ['a', 'b', 'c', 'd', 'e', 'a'] }).errors, [], 'a duplicate is not a sixth tag');
+});
+
 test('every field is optional', () => {
   assert.deepEqual(validateManifest({}), { manifest: {}, errors: [] });
 });

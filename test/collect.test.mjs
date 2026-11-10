@@ -76,6 +76,46 @@ test('a bad image or manifest warns and falls back instead of failing the build'
   assert.deepEqual(byRepo.badmanifest.links, [{ label: 'Docs', url: 'https://example.com/docs' }]);
 });
 
+test('release counts leave out drafts and pre-releases, and the latest is the newest published', async () => {
+  const fx = structuredClone(fixture);
+  fx.releases.somi = [
+    { tag_name: 'v6.0.0-rc.1', prerelease: true, published_at: '2026-11-10T00:00:00Z' },
+    { tag_name: 'v5.1.0', draft: true },
+    { tag_name: 'v5.0.2', published_at: '2026-11-09T12:00:00Z', html_url: 'https://github.com/skathio/somi/releases/tag/v5.0.2' },
+    { tag_name: 'v5.0.1', published_at: '2026-11-01T12:00:00Z' },
+  ];
+  const { projects } = await collect({ client: fixtureClient(fx), org: 'skathio' });
+  const p = projects.find((x) => x.repo === 'somi');
+  assert.equal(p.release.tag, 'v5.0.2');
+  assert.equal(p.releaseCount, 2);
+  fx.latest = { somi: { tag_name: 'v5.0.1', published_at: '2026-11-01T12:00:00Z' } };
+  const marked = (await collect({ client: fixtureClient(fx), org: 'skathio' })).projects.find((x) => x.repo === 'somi');
+  assert.equal(marked.release.tag, 'v5.0.1', "GitHub's 'latest' mark wins over list order");
+  assert.equal(p.releaseCountCapped, false);
+});
+
+test('kind, tags, language and licence reach the project', async () => {
+  const fx = structuredClone(fixture);
+  fx.files['somi/.github/homepage.json'].kind = 'Agent plugin';
+  fx.files['somi/.github/homepage.json'].tags = ['Node'];
+  Object.assign(fx.repos.find((r) => r.name === 'somi'), { language: 'TypeScript', license: { spdx_id: 'MIT' } });
+  const { projects } = await collect({ client: fixtureClient(fx), org: 'skathio' });
+  const p = projects.find((x) => x.repo === 'somi');
+  assert.equal(p.kind, 'Agent plugin');
+  assert.deepEqual(p.tags, ['Node']);
+  assert.equal(p.language, 'TypeScript');
+  assert.equal(p.license, 'MIT');
+  assert.equal(projects.find((x) => x.repo === 'rogue').license, null);
+});
+
+test("a private repo's language and licence stay out of the page", async () => {
+  const fx = structuredClone(fixture);
+  Object.assign(fx.repos.find((r) => r.name === 'optin-js'), { language: 'Rust', license: { spdx_id: 'MIT' } });
+  const p = (await collect({ client: fixtureClient(fx), org: 'skathio' })).projects.find((x) => x.repo === 'optin-js');
+  assert.equal(p.language, null);
+  assert.equal(p.license, null);
+});
+
 test('projects are ordered by most recent activity', async () => {
   const { projects } = await run();
   assert.deepEqual(projects.map((p) => p.repo).slice(0, 3), ['somi', 'hinokami', 'optin-js']);

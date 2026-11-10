@@ -41,10 +41,19 @@ async function readManifest(client, org, repo, warn) {
   return { manifest: manifest ?? {}, clean: manifest !== null && errors.length === 0 };
 }
 
-async function latestRelease(client, org, repo) {
-  const r = await client.json(`/repos/${org}/${repo}/releases/latest`, { allow404: true });
-  if (!r || !r.tag_name) return null;
-  return { tag: String(r.tag_name), date: r.published_at ?? null, url: r.html_url ?? null };
+// The latest release, as GitHub marks it (so "Set as latest" wins over a later backport),
+// and how many published releases there are (drafts and pre-releases left out). The count
+// stops at the first page of 100, which the page shows as "100+".
+async function releases(client, org, repo) {
+  const list = await client.json(`/repos/${org}/${repo}/releases?per_page=100`, { allow404: true });
+  const done = (Array.isArray(list) ? list : []).filter((r) => r && !r.draft && !r.prerelease && r.tag_name);
+  const marked = done.length ? await client.json(`/repos/${org}/${repo}/releases/latest`, { allow404: true }) : null;
+  const r = marked && marked.tag_name ? marked : done[0];
+  return {
+    latest: r ? { tag: String(r.tag_name), date: r.published_at ?? null, url: r.html_url ?? null } : null,
+    count: done.length,
+    capped: Array.isArray(list) && list.length === 100,
+  };
 }
 
 async function fetchImage(client, org, repo, image, warn) {
@@ -78,7 +87,8 @@ export async function collect({ client, org, warn = () => {} }) {
     const m = read?.manifest ?? {};
     if (m.listed === false) continue;
 
-    const release = await latestRelease(client, org, r.name);
+    const rel = await releases(client, org, r.name);
+    const release = rel.latest;
     let image = null;
     if (m.image) {
       const got = await fetchImage(client, org, r.name, m.image, warn);
@@ -95,6 +105,8 @@ export async function collect({ client, org, warn = () => {} }) {
       repo: r.name,
       name: m.name ?? r.name,
       tagline: m.tagline ?? (typeof r.description === 'string' && r.description.trim() ? r.description.trim().slice(0, 160) : ''),
+      kind: m.kind ?? '',
+      tags: m.tags ?? [],
       colour: m.colour ?? DEFAULT_COLOUR,
       image,
       links: m.links ?? [],
@@ -103,6 +115,11 @@ export async function collect({ client, org, warn = () => {} }) {
       repoUrl: isPrivate ? null : r.html_url,
       site: !isPrivate && r.has_pages ? `https://${org.toLowerCase()}.github.io/${r.name}/` : null,
       release: release && { ...release, url: isPrivate ? null : release.url },
+      releaseCount: rel.count,
+      releaseCountCapped: rel.capped,
+      // GitHub's own repo metadata, shown in the hero: the main language and the licence.
+      language: !isPrivate && typeof r.language === 'string' ? r.language.slice(0, 30) : null,
+      license: !isPrivate && typeof r.license?.spdx_id === 'string' && r.license.spdx_id !== 'NOASSERTION' ? r.license.spdx_id.slice(0, 30) : null,
       updated: r.pushed_at ?? null,
     });
   }

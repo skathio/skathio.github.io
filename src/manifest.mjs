@@ -8,6 +8,9 @@ export const MANIFEST_PATH = '.github/homepage.json';
 export const LIMITS = Object.freeze({
   name: 40,
   tagline: 160,
+  kind: 24,
+  tags: 5,
+  tag: 20,
   links: 4,
   linkLabel: 24,
   imageBytes: 512 * 1024,
@@ -18,7 +21,7 @@ export const LIMITS = Object.freeze({
 export const DEFAULT_COLOUR = '#5b606b';
 
 const HEX = /^#[0-9a-f]{6}$/i;
-const KNOWN = new Set(['name', 'tagline', 'colour', 'image', 'links', 'listed']);
+const KNOWN = new Set(['name', 'tagline', 'kind', 'tags', 'colour', 'image', 'links', 'listed']);
 
 // Extension → media type. SVG is allowed, screened (see screenSvg), and never served as a file.
 export const IMAGE_TYPES = Object.freeze({
@@ -87,6 +90,25 @@ export function validateManifest(raw) {
   if ('tagline' in raw) {
     const v = text(raw.tagline, LIMITS.tagline);
     v ? (m.tagline = v) : errors.push(`tagline must be a non-empty string of at most ${LIMITS.tagline} characters`);
+  }
+  if ('kind' in raw) {
+    const v = text(raw.kind, LIMITS.kind);
+    v ? (m.kind = v) : errors.push(`kind must be a non-empty string of at most ${LIMITS.kind} characters`);
+  }
+  if ('tags' in raw) {
+    if (!Array.isArray(raw.tags)) {
+      errors.push('tags must be a list of short strings');
+    } else {
+      const tags = [];
+      for (const t of raw.tags) {
+        const v = text(t, LIMITS.tag);
+        if (!v) { errors.push(`each tag must be a non-empty string of at most ${LIMITS.tag} characters`); continue; }
+        if (tags.includes(v)) continue;
+        if (tags.length >= LIMITS.tags) { errors.push(`at most ${LIMITS.tags} tags`); break; }
+        tags.push(v);
+      }
+      m.tags = tags;
+    }
   }
   if ('colour' in raw) {
     isHexColour(raw.colour) ? (m.colour = raw.colour.toLowerCase()) : errors.push('colour must be a hex colour like #b80f0f');
