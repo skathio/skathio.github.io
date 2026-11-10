@@ -1,0 +1,73 @@
+# Builds the org homepage from every repo's .github/homepage.json and deploys it to Pages.
+#
+# Triggers:
+#   - push to main          : a change to the homepage itself.
+#   - schedule (every 6 h)  : picks up new repos, releases and manifest edits without a ping.
+#   - repository_dispatch   : `project-released`, sent by a project repo after a release or a
+#                             manifest change, so its tile updates within minutes.
+#   - workflow_dispatch     : by hand.
+# The dispatch payload is never read: the build always reads the repos itself, so a ping can
+# only make the homepage rebuild sooner, not change what it shows.
+#
+# Token: the build reads the org with HOMEPAGE_READ_TOKEN when that secret is set (a fine-grained
+# token with read-only Contents and Metadata on all skathio repos; needed only to list private
+# repos that opted in). Without it, the job's own token lists public repos only.
+#
+# Not hashira's static-webapp-ci: that reusable workflow takes no secrets, and the build needs
+# one. The upload and deploy steps are hashira's composite actions, at the same pin as the
+# other skathio sites.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 */6 * * *'
+  repository_dispatch:
+    types: [project-released]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # pages-upload (upload-pages-artifact)
+      pages: write      # pages-upload (upload-pages-artifact)
+    steps:
+      # actions/checkout v4.2.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
+      # actions/setup-node (same pin as hashira's flows)
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - name: Build from the org's repos
+        env:
+          GH_TOKEN: ${{ secrets.HOMEPAGE_READ_TOKEN || github.token }}
+        run: npm run build
+      - uses: skathio/hashira/.github/actions/pages-upload@e4facc4ca8d8896285931a3b80a1a958584d1a85
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    permissions:
+      pages: write      # deploy-pages
+      id-token: write   # deploy-pages authenticates via OIDC
+    steps:
+      - id: deploy
+        uses: skathio/hashira/.github/actions/pages-deploy@e4facc4ca8d8896285931a3b80a1a958584d1a85

@@ -1,0 +1,245 @@
+{
+  "repos": [
+    {
+      "name": "somi",
+      "private": false,
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "has_pages": true,
+      "html_url": "https://github.com/skathio/somi",
+      "description": "SoMi",
+      "pushed_at": "2026-11-09T10:00:00Z"
+    },
+    {
+      "name": "hinokami",
+      "private": false,
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "has_pages": true,
+      "html_url": "https://github.com/skathio/hinokami",
+      "description": "Pizza helper",
+      "pushed_at": "2026-10-01T00:00:00Z"
+    },
+    {
+      "name": "rogue",
+      "private": false,
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "has_pages": false,
+      "html_url": "https://github.com/skathio/rogue",
+      "description": "Rogue CQS library",
+      "pushed_at": "2026-07-16T00:00:00Z"
+    },
+    {
+      "name": "secret-js",
+      "private": true,
+      "visibility": "private",
+      "fork": false,
+      "archived": false,
+      "has_pages": false,
+      "html_url": "https://github.com/skathio/secret-js",
+      "description": "never listed",
+      "pushed_at": "2026-11-01T00:00:00Z"
+    },
+    {
+      "name": "optin-js",
+      "private": true,
+      "visibility": "private",
+      "fork": false,
+      "archived": false,
+      "has_pages": false,
+      "html_url": "https://github.com/skathio/optin-js",
+      "description": "private but opted in",
+      "pushed_at": "2026-08-01T00:00:00Z"
+    },
+    {
+      "name": "forked",
+      "private": false,
+      "visibility": "public",
+      "fork": true,
+      "archived": false,
+      "has_pages": false,
+      "html_url": "https://github.com/skathio/forked",
+      "description": null,
+      "pushed_at": "2026-11-01T00:00:00Z"
+    },
+    {
+      "name": "old",
+      "private": false,
+      "visibility": "public",
+      "fork": false,
+      "archived": true,
+      "has_pages": false,
+      "html_url": "https://github.com/skathio/old",
+      "description": null,
+      "pushed_at": "2026-11-01T00:00:00Z"
+    },
+    {
+      "name": "skathio.github.io",
+      "private": false,
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "has_pages": true,
+      "html_url": "https://github.com/skathio/skathio.github.io",
+      "description": null,
+      "pushed_at": "2026-11-01T00:00:00Z"
+    },
+    {
+      "name": ".github",
+      "private": false,
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "has_pages": false,
+      "html_url": "https://github.com/skathio/.github",
+      "description": null,
+      "pushed_at": "2026-11-01T00:00:00Z"
+    },
+    {
+      "name": "hidden",
+      "private": false,
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "has_pages": false,
+      "html_url": "https://github.com/skathio/hidden",
+      "description": "public but opted out",
+      "pushed_at": "2026-11-01T00:00:00Z"
+    },
+    {
+      "name": "badsvg",
+      "private": false,
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "has_pages": false,
+      "html_url": "https://github.com/skathio/badsvg",
+      "description": "ships an svg with script",
+      "pushed_at": "2026-05-01T00:00:00Z"
+    },
+    {
+      "name": "badmanifest",
+      "private": false,
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "has_pages": false,
+      "html_url": "https://github.com/skathio/badmanifest",
+      "description": "has bad fields",
+      "pushed_at": "2026-04-01T00:00:00Z"
+    },
+    {
+      "name": "remote",
+      "private": false,
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "has_pages": false,
+      "html_url": "https://github.com/skathio/remote",
+      "description": "image from a URL",
+      "pushed_at": "2026-03-01T00:00:00Z"
+    },
+    {
+      "name": "broken-js",
+      "private": true,
+      "visibility": "private",
+      "fork": false,
+      "archived": false,
+      "has_pages": false,
+      "html_url": "https://github.com/skathio/broken-js",
+      "description": "must stay private",
+      "pushed_at": "2026-11-05T00:00:00Z"
+    },
+    {
+      "name": "stringly-js",
+      "private": true,
+      "visibility": "private",
+      "fork": false,
+      "archived": false,
+      "has_pages": false,
+      "html_url": "https://github.com/skathio/stringly-js",
+      "description": "must stay private",
+      "pushed_at": "2026-11-05T00:00:00Z"
+    }
+  ],
+  "files": {
+    "somi/.github/homepage.json": {
+      "name": "SoMi",
+      "tagline": "A workflow plugin for coding agents.",
+      "colour": "#b80f0f",
+      "image": "site/brand/somi-icon-800.png",
+      "links": {
+        "npm": "https://www.npmjs.com/package/@skathio/somi"
+      }
+    },
+    "hinokami/.github/homepage.json": {
+      "name": "Hinokami",
+      "tagline": "Pizza dough, by the numbers.",
+      "colour": "#d23215",
+      "image": "public/mark.svg"
+    },
+    "optin-js/.github/homepage.json": {
+      "name": "Optin",
+      "tagline": "A private project that chose to be listed.",
+      "colour": "#1d4ed8"
+    },
+    "hidden/.github/homepage.json": {
+      "listed": false
+    },
+    "badsvg/.github/homepage.json": {
+      "name": "Bad SVG",
+      "image": "brand/mark.svg"
+    },
+    "badmanifest/.github/homepage.json": {
+      "name": "<b>Bad</b>",
+      "colour": "red;}body{display:none",
+      "image": "../../etc/passwd.png",
+      "links": {
+        "x": "javascript:alert(1)",
+        "Docs": "https://example.com/docs"
+      },
+      "extra": 1
+    },
+    "remote/.github/homepage.json": {
+      "name": "Remote",
+      "image": "https://images.example.com/logo.png"
+    },
+    "broken-js/.github/homepage.json": "{\"listed\": false,}",
+    "stringly-js/.github/homepage.json": {
+      "listed": "false"
+    }
+  },
+  "blobs": {
+    "somi/site/brand/somi-icon-800.png": {
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+    },
+    "hinokami/public/mark.svg": {
+      "base64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMCAxMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZDIzMjE1Ii8+PC9zdmc+"
+    },
+    "badsvg/brand/mark.svg": {
+      "base64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxzY3JpcHQ+YWxlcnQoMSk8L3NjcmlwdD48L3N2Zz4="
+    }
+  },
+  "urls": {
+    "https://images.example.com/logo.png": {
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+      "contentType": "image/png"
+    }
+  },
+  "releases": {
+    "somi": {
+      "tag_name": "v5.0.2",
+      "published_at": "2026-11-09T12:00:00Z",
+      "html_url": "https://github.com/skathio/somi/releases/tag/v5.0.2"
+    },
+    "optin-js": {
+      "tag_name": "v0.3.0",
+      "published_at": "2026-08-02T00:00:00Z",
+      "html_url": "https://github.com/skathio/optin-js/releases/tag/v0.3.0"
+    }
+  }
+}

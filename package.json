@@ -1,0 +1,16 @@
+{
+  "name": "skathio.github.io",
+  "private": true,
+  "type": "module",
+  "description": "The skathio org homepage: one tile per published project, built from each repo's .github/homepage.json.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs --out dist",
+    "build:fixture": "node scripts/build.mjs --out dist --fixture test/fixtures/org.json",
+    "test": "node --test --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info \"test/**/*.test.mjs\"",
+    "pretest": "node --input-type=module -e \"import fs from 'node:fs'; fs.mkdirSync('coverage', { recursive: true })\""
+  }
+}

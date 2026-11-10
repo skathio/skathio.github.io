@@ -1,0 +1,24 @@
+# PR checks through hashira's static-webapp flow: tests with coverage, the scan suite, and an
+# offline build from the test fixture (no token, no network), so a PR can never reach the org.
+name: pr
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  ci:
+    uses: skathio/hashira/.github/workflows/static-webapp-ci.yml@e4facc4ca8d8896285931a3b80a1a958584d1a85
+    permissions:
+      contents: read
+      id-token: write
+      pages: write
+      pull-requests: write
+      security-events: write
+    with:
+      node_version: '24'
+      build_command: 'npm run build:fixture'
+      output_dir: 'dist'
+      test_command: 'npm test'
+      coverage_path: 'coverage/lcov.info'
+      library_ref: 'e4facc4ca8d8896285931a3b80a1a958584d1a85'
