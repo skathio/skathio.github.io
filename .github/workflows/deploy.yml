@@ -6,6 +6,12 @@
 #   - repository_dispatch   : `project-released`, sent by a project repo after a release or a
 #                             manifest change, so its tile updates within minutes.
 #   - workflow_dispatch     : by hand.
+#
+# One release, one approval: a push to main or a manual run changes what the site's own code
+# does, so it waits at `gate` for the `production` Environment's owner approval. The scheduled
+# rebuild and the `project-released` ping only re-read the repos' manifests, which each repo
+# already ships through its own reviewed pipeline, so they run unattended; gating them would
+# stall the homepage between your approvals.
 # The dispatch payload is never read: the build always reads the repos itself, so a ping can
 # only make the homepage rebuild sooner, not change what it shows.
 #
@@ -34,7 +40,20 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # One release, one approval: this job waits for the `production` Environment's owner approval.
+  gate:
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    environment: production
+    permissions: {}
+    steps:
+      - name: Owner approval
+        run: echo "Approved in the production environment."
+
   build:
+    needs: gate
+    # After the approval at `gate` for a code change, or with `gate` skipped for a data refresh.
+    if: ${{ always() && (needs.gate.result == 'success' || (needs.gate.result == 'skipped' && (github.event_name == 'schedule' || github.event_name == 'repository_dispatch'))) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -61,6 +80,8 @@ jobs:
 
   deploy:
     needs: build
+    # `always()` because a skipped `gate` upstream would otherwise skip this job too.
+    if: ${{ always() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
