@@ -12,7 +12,7 @@ them. To add or change a project, edit that project's manifest: see
 ```
 project repo                                this repo
 .github/homepage.json  ──(read by build)──▶  scripts/build.mjs ──▶ dist/ ──▶ Pages
-release or manifest change ──ping──▶ repository_dispatch: project-released
+release or manifest change ──ping──▶ repository_dispatch: project-released / project-updated
                                      schedule: every 6 h
 ```
 
@@ -35,14 +35,27 @@ to, and a test checks that no top-level folder here takes a project's name.
 | Secret | Where | Token | Needed for |
 |---|---|---|---|
 | `HOMEPAGE_READ_TOKEN` | this repo | fine-grained, owner `skathio`, all repositories, **Contents: read**, **Metadata: read** | listing private repos that opted in. Without it only public repos are read. |
-| `HOMEPAGE_DISPATCH_TOKEN` | each project repo | fine-grained, owner `skathio`, only `skathio/skathio.github.io`, **Contents: read and write** | the release ping. Without it the tile updates on the next scheduled build. |
+| `HOMEPAGE_DISPATCH_TOKEN` | the `homepage` environment of each project repo | fine-grained, owner `skathio`, only `skathio/skathio.github.io`, **Contents: read and write** | the ping. Without it the tile updates on the next scheduled build. |
 
-GitHub's `repository_dispatch` endpoint requires Contents write on the target repo; the
-dispatch token is limited to this repo for that reason. Setting it in a project repo:
+GitHub's `repository_dispatch` endpoint requires Contents write on the target repo, so the
+dispatch token can push to this repo. Two limits keep that narrow: the token covers this repo
+only, and it is a secret of the project's `homepage` environment, which only `main` can use, so a
+workflow pushed to any other branch or tag cannot read it. (A tag is not allowed: anyone who can
+push a branch can push a tag.) Do not also keep it
+as a repository or organisation secret: those are readable from any branch. Setting it up in a
+project repo:
 
 ```sh
-gh secret set HOMEPAGE_DISPATCH_TOKEN -R skathio/<repo>
+# The environment, limited to main (once per repo).
+gh api -X PUT repos/skathio/<repo>/environments/homepage \
+  --input - <<<'{"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}'
+gh api -X POST repos/skathio/<repo>/environments/homepage/deployment-branch-policies -f name=main -f type=branch
+# The token, as an environment secret.
+gh secret set HOMEPAGE_DISPATCH_TOKEN --env homepage -R skathio/<repo>
 ```
+
+A failed ping (an expired or under-scoped token) leaves a warning on the project's run and does
+not fail it; the tile then waits for the scheduled build.
 
 ## Develop
 
