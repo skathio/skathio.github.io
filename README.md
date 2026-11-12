@@ -39,17 +39,17 @@ to, and a test checks that no top-level folder here takes a project's name.
 
 GitHub's `repository_dispatch` endpoint requires Contents write on the target repo, so the
 dispatch token can push to this repo. Two limits keep that narrow: the token covers this repo
-only, and it is a secret of the project's `homepage` environment, which only `main` and `v*`
-release tags can use, so a workflow pushed to any other branch cannot read it. Do not also keep it
+only, and it is a secret of the project's `homepage` environment, which only `main` can use, so a
+workflow pushed to any other branch or tag cannot read it. (A tag is not allowed: anyone who can
+push a branch can push a tag.) Do not also keep it
 as a repository or organisation secret: those are readable from any branch. Setting it up in a
 project repo:
 
 ```sh
-# The environment, limited to main and release tags (once per repo).
+# The environment, limited to main (once per repo).
 gh api -X PUT repos/skathio/<repo>/environments/homepage \
   --input - <<<'{"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}'
 gh api -X POST repos/skathio/<repo>/environments/homepage/deployment-branch-policies -f name=main -f type=branch
-gh api -X POST repos/skathio/<repo>/environments/homepage/deployment-branch-policies -f name='v*' -f type=tag
 # The token, as an environment secret.
 gh secret set HOMEPAGE_DISPATCH_TOKEN --env homepage -R skathio/<repo>
 ```

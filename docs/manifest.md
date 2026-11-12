@@ -62,8 +62,8 @@ the build refuses, is left off the homepage until the manifest is fixed.
 ## 3. The ping: update the tile right away
 
 The homepage rebuilds every six hours on its own. To update a tile right after a release or a
-manifest change, the project sends a `repository_dispatch`: `project-released` after a release,
-`project-updated` otherwise. The token lives in the project's `homepage` environment; the
+manifest change, the project sends a `repository_dispatch`: `project-updated` for a manifest or
+image change, `project-released` from a release workflow. The token lives in the project's `homepage` environment; the
 [README](../README.md#secrets) shows how to set both up.
 
 ```yaml
@@ -73,8 +73,6 @@ on:
   push:
     branches: [main]
     paths: ['.github/homepage.json', '<your image path>']
-  release:
-    types: [published]
   workflow_dispatch:
 
 permissions: {}
@@ -82,7 +80,7 @@ permissions: {}
 jobs:
   ping:
     runs-on: ubuntu-latest
-    # The token can write to the homepage repo; only main and release tags may read it.
+    # The token can write to the homepage repo; only main may read it.
     environment: homepage
     permissions: {}
     steps:
@@ -90,7 +88,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.HOMEPAGE_DISPATCH_TOKEN }}
           REPO: ${{ github.repository }}
-          EVENT: ${{ github.event_name == 'release' && 'project-released' || 'project-updated' }}
+          EVENT: project-updated
         run: |
           set -uo pipefail
           if [ -z "${GH_TOKEN}" ]; then
@@ -104,8 +102,11 @@ jobs:
           fi
 ```
 
-A release that a workflow creates with `GITHUB_TOKEN` does not fire the `release` event (GitHub
-does not chain workflows that way). A repo that releases from a workflow therefore also runs the
-same step as a last job of its publish workflow.
+The ping does not listen for the `release` event: that runs on the release tag, and the
+`homepage` environment admits `main` only, since anyone who can push a branch can also push a tag.
+A release made by hand shows on the next scheduled build, or at once if you run this workflow by
+hand on `main`. A repo that releases from a workflow on `main` runs the same step, with
+`EVENT: project-released`, as the last job of its publish workflow, guarded by
+`github.ref == 'refs/heads/main'`.
 
 The ping carries no content: the homepage ignores the payload and re-reads every repo itself.
