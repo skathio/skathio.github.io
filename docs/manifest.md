@@ -62,7 +62,9 @@ the build refuses, is left off the homepage until the manifest is fixed.
 ## 3. The ping: update the tile right away
 
 The homepage rebuilds every six hours on its own. To update a tile right after a release or a
-manifest change, the project sends a `repository_dispatch`:
+manifest change, the project sends a `repository_dispatch`: `project-released` after a release,
+`project-updated` otherwise. The token lives in the project's `homepage` environment; the
+[README](../README.md#secrets) shows how to set both up.
 
 ```yaml
 # .github/workflows/homepage.yml
@@ -80,22 +82,26 @@ permissions: {}
 jobs:
   ping:
     runs-on: ubuntu-latest
+    # The token can write to the homepage repo; only main and release tags may read it.
+    environment: homepage
     permissions: {}
     steps:
       - name: Ask the homepage to rebuild
-        # A ping is a courtesy: an expired token or an API error must not fail the run.
-        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.HOMEPAGE_DISPATCH_TOKEN }}
           REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name == 'release' && 'project-released' || 'project-updated' }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           if [ -z "${GH_TOKEN}" ]; then
             echo "::notice::HOMEPAGE_DISPATCH_TOKEN is not set; the homepage picks this up on its next scheduled build."
             exit 0
           fi
-          gh api repos/skathio/skathio.github.io/dispatches \
-            -f event_type=project-released -f "client_payload[repo]=${REPO}"
+          # A ping is a courtesy, so a failure never fails the run, but it must be seen.
+          if ! gh api repos/skathio/skathio.github.io/dispatches \
+            -f "event_type=${EVENT}" -f "client_payload[repo]=${REPO}"; then
+            echo "::warning title=Homepage ping failed::Check or rotate HOMEPAGE_DISPATCH_TOKEN (the 'homepage' environment secret)."
+          fi
 ```
 
 A release that a workflow creates with `GITHUB_TOKEN` does not fire the `release` event (GitHub

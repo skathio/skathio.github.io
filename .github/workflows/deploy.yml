@@ -3,8 +3,9 @@
 # Triggers:
 #   - push to main          : a change to the homepage itself.
 #   - schedule (every 6 h)  : picks up new repos, releases and manifest edits without a ping.
-#   - repository_dispatch   : `project-released`, sent by a project repo after a release or a
-#                             manifest change, so its tile updates within minutes.
+#   - repository_dispatch   : `project-released` (after a release) or `project-updated` (after a
+#                             manifest or image change), sent by a project repo so its tile
+#                             updates within minutes. Both only mean "rebuild".
 #   - workflow_dispatch     : by hand.
 #
 # The merge is the approval: main only takes reviewed pull requests (or an owner), so every
@@ -28,7 +29,7 @@ on:
   schedule:
     - cron: '17 */6 * * *'
   repository_dispatch:
-    types: [project-released]
+    types: [project-released, project-updated]
   workflow_dispatch:
 
 permissions: {}
