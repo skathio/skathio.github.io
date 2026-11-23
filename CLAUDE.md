@@ -84,16 +84,20 @@ cannot affect the page (CI, docs, tests only) do not need it. Say so in the PR.
 
 ## CI and deploy
 
-- **`pr.yml`** (every PR): calls hashira's reusable `static-webapp-ci.yml` at a pinned SHA. The
-  jobs are `ci / setup`, `ci / test` (`npm test` with coverage), `ci / scan-suite` (security
-  scans) and `ci / build-and-upload` (`npm run build:fixture`, offline). A PR never reaches the org.
-- **`deploy.yml`**: runs on push to `main`, every 6 h (`17 */6 * * *`), on `repository_dispatch`
-  (`project-released`, `project-updated`) and by hand. It runs `npm test`, then a live build
-  with `HOMEPAGE_READ_TOKEN` (or the job token), then deploys to GitHub Pages through hashira's
-  pages-upload and pages-deploy actions. **The merge is the approval**: there is no manual gate.
-  Merging to `main` publishes.
+- **`ci.yml`** is the one workflow, from hashira v3's static-webapp template. On a pull request
+  only the `ci` job runs: hashira's reusable `static-webapp-ci.yml` at a pinned SHA, with jobs
+  `ci / setup`, `ci / test` (`npm test` with coverage), `ci / scan-suite` (security scans),
+  `ci / quality-gate` (SoMi's quality gate, at its default) and `ci / build-and-upload`
+  (`npm run build:fixture`, offline). A PR never reaches the org.
+- On push to `main`, every 6 h (`17 */6 * * *`), on `repository_dispatch` (`project-released`,
+  `project-updated`) and by hand, `ci` is skipped and this repo's own `build` and `deploy` jobs
+  run instead: `npm test`, a live build with `HOMEPAGE_READ_TOKEN` (or the job token), then a
+  deploy to GitHub Pages through hashira's pages-upload and pages-deploy actions. hashira's CI
+  cannot do this build: it takes no secrets and would upload the fixture build. **The merge is
+  the approval**: there is no manual gate. Merging to `main` publishes.
 - There is no release or versioning. A deploy is the release.
-- When bumping the hashira pin, change it in both workflows and in `library_ref` together.
+- When bumping the hashira pin, change all three `skathio/hashira` refs in `ci.yml` together.
+  There is no `library_ref`: v3 checks its actions out at its own commit.
 - Dependabot updates the GitHub Actions pins weekly, in one group.
 
 ## Conventions
