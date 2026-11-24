@@ -16,7 +16,8 @@ GH_TOKEN=$(gh auth token) npm run build   # live build from the org; reads the r
 - There is no lint or format command. Match the surrounding style: 2-space indent, single
   quotes, semicolons, long lines are fine.
 - `build:fixture` prints `warning: ...` lines for `badsvg`, `badmanifest`, `broken-js` and
-  `stringly-js`. They are expected: the fixture deliberately carries bad manifests.
+  `stringly-js`. They are expected: the fixture deliberately carries bad manifests, and a PR in
+  `badsvg` whose URL is wrong ("pull request skipped").
 - Prefer `build:fixture` for any local check. The live build hits the GitHub API.
 
 ## Layout
@@ -25,15 +26,16 @@ GH_TOKEN=$(gh auth token) npm run build   # live build from the org; reads the r
 |---|---|
 | `scripts/build.mjs` | CLI entry: `--out`, `--org`, `--fixture`. Emits `::warning` annotations in Actions. |
 | `src/collect.mjs` | Lists org repos and reads manifests, releases and images. Decides who is listed. `githubClient` caps response sizes and sends the token to the API only. |
+| `src/pulls.mjs` | Open PRs for `/prs/`: one GraphQL search (`githubClient.graphql`), filtered to `collect`'s listed public projects, with status, CI and review labels. Re-exported from `collect.mjs`. |
 | `src/manifest.mjs` | Manifest schema, `LIMITS`, URL/path checks, image byte checks, `screenSvg`. |
-| `src/render.mjs` | The whole page: HTML, inline `CSS`, light/dark tokens, tiles, hero stats, releases timeline. |
+| `src/render.mjs` | The whole page: HTML, inline `CSS`, light/dark tokens, tiles, hero stats, releases timeline, and the `/prs/` page (`renderPrsPage`). |
 | `src/build.mjs` | `writeSite` (writes `dist/`, refuses reserved paths) and `fixtureClient`. |
 | `brand/` | `mark.svg` (the org mark) and `theme.js` (Auto/Light/Dark toggle, localStorage). Copied into `dist/brand/`. |
 | `test/` | `node:test` files, one per `src` module, plus `fixtures/org.json`. |
 | `docs/manifest.md` | The manifest contract for project repos. Keep it in sync with `manifest.mjs`. |
 
 Output in `dist/`: `index.html`, `projects.json` (the public feed), `tiles/<repo>.<ext>`,
-`brand/`, `.nojekyll`.
+`brand/`, `prs/index.html` (open pull requests), `.nojekyll`.
 
 ## Security model (do not weaken)
 
@@ -53,7 +55,7 @@ value (`esc`, `isHexColour`, `httpsUrl`, `tilePath`). Keep both layers.
 
 - **Reserved paths.** Project sites are served at `/<repo>/` from their own repos. This site
   must never publish a top-level path named like a repo. `writeSite` throws if a repo is named
-  `index.html`, `projects.json`, `tiles`, `brand` or `.nojekyll`. When the org gets a new repo,
+  `index.html`, `projects.json`, `tiles`, `brand`, `prs` or `.nojekyll`. When the org gets a new repo,
   add its name to the list in `test/build.test.mjs` ("the source tree has no top-level folder
   named after a project repo"). Never add a top-level folder here named after a repo.
 - **CSS lives in a JS template string** (`CSS` in `render.mjs`). Dark tokens are the `DARK`
@@ -89,7 +91,7 @@ cannot affect the page (CI, docs, tests only) do not need it. Say so in the PR.
   `ci / setup`, `ci / test` (`npm test` with coverage), `ci / scan-suite` (security scans),
   `ci / quality-gate` (SoMi's quality gate, at its default) and `ci / build-and-upload`
   (`npm run build:fixture`, offline). A PR never reaches the org.
-- On push to `main`, every 6 h (`17 */6 * * *`), on `repository_dispatch` (`project-released`,
+- On push to `main`, hourly (`17 * * * *`), on `repository_dispatch` (`project-released`,
   `project-updated`) and by hand, `ci` is skipped and this repo's own `build` and `deploy` jobs
   run instead: `npm test`, a live build with `HOMEPAGE_READ_TOKEN` (or the job token), then a
   deploy to GitHub Pages through hashira's pages-upload and pages-deploy actions. hashira's CI

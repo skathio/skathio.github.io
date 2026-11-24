@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { collect, githubClient } from '../src/collect.mjs';
+import { collect, collectPulls, githubClient } from '../src/collect.mjs';
 import { fixtureClient } from '../src/build.mjs';
 
 const fixture = JSON.parse(fs.readFileSync(new URL('./fixtures/org.json', import.meta.url), 'utf8'));
@@ -161,4 +161,47 @@ test('a missing manifest is a 404, not an error', async () => {
   const fetchImpl = async () => new Response('{}', { status: 404 });
   assert.equal(await githubClient({ fetchImpl }).json('/x', { allow404: true }), null);
   await assert.rejects(githubClient({ fetchImpl }).json('/x'), /404/);
+});
+
+// The PR search, beyond the rules in pulls.test.mjs: how the open points were settled.
+const prNode = (fields = {}) => ({
+  repository: { name: 'somi', isPrivate: false }, number: 1, title: 'Bump x', url: 'https://github.com/skathio/somi/pull/1',
+  isDraft: false, author: { login: 'dependabot' }, updatedAt: '2026-11-20T10:00:00Z', reviewDecision: null, mergeable: 'MERGEABLE',
+  commits: { nodes: [{ commit: { statusCheckRollup: { state: 'SUCCESS' } } }] }, ...fields,
+});
+const searchWith = async (nodes) => {
+  const warnings = [];
+  const sent = [];
+  const client = { graphql: async (query, variables) => { sent.push(variables); return { data: { search: { issueCount: nodes.length, nodes } } }; } };
+  const out = await collectPulls({ client, org: 'skathio', projects: [{ repo: 'somi', private: false }], warn: (r, m) => warnings.push(`${r}: ${m}`) });
+  return { ...out, warnings, sent };
+};
+
+test('the PR search asks for public repos only, so GitHub\'s count never includes private PRs', async () => {
+  const { sent } = await searchWith([]);
+  assert.match(sent[0].q, /(^| )is:public( |$)/);
+});
+
+test('a PR node with no whole positive number is dropped with a warning', async () => {
+  for (const number of ['1', 1.5, 0, null]) {
+    const { pulls, warnings } = await searchWith([prNode({ number })]);
+    assert.deepEqual(pulls, [], String(number));
+    assert.equal(warnings.length, 1, String(number));
+  }
+});
+
+test('a PR from a deleted account shows GitHub\'s ghost login, and a missing title is empty', async () => {
+  const { pulls } = await searchWith([prNode({ author: null, title: 42 })]);
+  assert.equal(pulls[0].author, 'ghost');
+  assert.equal(pulls[0].title, '');
+});
+
+test('a title cut at 200 characters never ends in half a character pair', async () => {
+  const { pulls } = await searchWith([prNode({ title: `${'a'.repeat(199)}\u{1F600}` })]);
+  assert.equal(pulls[0].title, 'a'.repeat(199));
+});
+
+test('a login over 39 characters is cut, and its [bot] suffix kept', async () => {
+  const { pulls } = await searchWith([prNode({ author: { login: `${'b'.repeat(45)}[bot]` } })]);
+  assert.equal(pulls[0].author, `${'b'.repeat(39)}[bot]`);
 });

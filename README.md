@@ -13,7 +13,7 @@ them. To add or change a project, edit that project's manifest: see
 project repo                                this repo
 .github/homepage.json  ──(read by build)──▶  scripts/build.mjs ──▶ dist/ ──▶ Pages
 release or manifest change ──ping──▶ repository_dispatch: project-released / project-updated
-                                     schedule: every 6 h
+                                     schedule: hourly
 ```
 
 - **Pulled, not pushed.** The build reads every repo through the GitHub API: the manifest, the

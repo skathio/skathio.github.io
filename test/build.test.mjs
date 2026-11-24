@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { writeSite } from '../src/build.mjs';
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'homepage-'));
@@ -31,4 +32,12 @@ test('the source tree has no top-level folder named after a project repo', () =>
   const root = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
   const names = ['somi', 'rogue', 'hinokami', 'maneki', 'hashira', 'maneki-data', 'stonks', 'stonks-data', 'raven-js', 'ripper-js', 'jutsu-js', 'arise-js', 'arise-net', 'rogue-js'];
   for (const entry of fs.readdirSync(root)) assert.ok(!names.includes(entry.toLowerCase()), entry);
+});
+
+test('the fixture build reads the open PRs and warns about the bad URL without failing', () => {
+  const root = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
+  const run = spawnSync(process.execPath, ['scripts/build.mjs', '--out', tmp(), '--fixture', 'test/fixtures/org.json'], { cwd: root, encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /open pull requests: [1-9]\d* shown of \d+/);
+  assert.match(run.stderr, /pull request skipped: its URL is not https:\/\/github\.com\/skathio\//);
 });

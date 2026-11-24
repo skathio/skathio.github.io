@@ -90,9 +90,9 @@ function timeline(projects) {
 <ol class="tl">${rows.map(item).join('')}</ol></section>`;
 }
 
-const DARK = '--canvas:#101216;--surface:#171a20;--line:#2b3039;--ink:#e8e9ec;--muted:#a0a6b1;--accent:#ff4d4d;--code:#1f232b;--glow:rgba(255,40,40,.45);color-scheme:dark';
+const DARK = '--canvas:#101216;--surface:#171a20;--line:#2b3039;--ink:#e8e9ec;--muted:#a0a6b1;--accent:#ff4d4d;--code:#1f232b;--glow:rgba(255,40,40,.45);--ok:#5cc98a;--wait:#e2b04a;--info:#7fb0ff;color-scheme:dark';
 const CSS = `
-:root{--canvas:#f7f6f2;--surface:#fff;--line:#dedbd2;--ink:#1b1d22;--muted:#5b606b;--accent:#b80f0f;--code:#efece4;--glow:rgba(184,15,15,.22);
+:root{--canvas:#f7f6f2;--surface:#fff;--line:#dedbd2;--ink:#1b1d22;--muted:#5b606b;--accent:#b80f0f;--code:#efece4;--glow:rgba(184,15,15,.22);--ok:#1d7a45;--wait:#8a5a00;--info:#1f5fbf;
 --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;color-scheme:light}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){${DARK}}}
 :root[data-theme=dark]{${DARK}}
@@ -122,6 +122,7 @@ h1{font-size:4.2rem;line-height:1.05;letter-spacing:-.035em;margin:12px 0 20px}
 .pills li{border:1px solid var(--line);border-radius:999px;padding:2px 12px;font-size:.82rem}
 .hero .pills li:nth-child(-n+2){border-color:var(--accent);color:var(--accent)}
 section{border-top:1px solid var(--line);padding:72px 0}
+section.first{border-top:0;padding-top:48px}
 h2{font-size:2.1rem;letter-spacing:-.02em;margin:6px 0 10px}
 .sub{color:var(--muted);max-width:640px;margin:0 0 36px}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
@@ -147,13 +148,51 @@ h2{font-size:2.1rem;letter-spacing:-.02em;margin:6px 0 10px}
 .tl time{color:var(--muted);font-size:.85rem;margin:0 8px}
 .tl p{margin:2px 0 0;color:var(--muted)}
 .empty{color:var(--muted)}
+.counts{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 14px}
+.counts li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:.9rem}
+.counts b{margin-right:4px}
+.note{color:var(--muted);font-size:.9rem;margin:0 0 14px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.prs{width:100%;border-collapse:collapse;font-size:.9rem}
+.prs th,.prs td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+.prs th{color:var(--muted);font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.prs tr:last-child td{border-bottom:0}
+.prs td.pr{min-width:240px}
+.prs td.pr a,.prs td.proj a{text-decoration:underline}
+.prs .nw{white-space:nowrap}
+.st{display:inline-block;white-space:nowrap;border:1px solid currentColor;border-radius:999px;padding:0 10px;font-size:.78rem;font-weight:700}
+.st-bad{color:var(--accent)}.st-ok{color:var(--ok)}.st-rev{color:var(--info)}.st-wait{color:var(--wait)}.st-none{color:var(--muted)}
 footer{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);font-size:.85rem}
 footer a{text-decoration:underline}
+/* At phone width each pull request stacks into its own block, so nothing hides off to the side. */
+@media (max-width:760px){.prs thead{display:none}.prs,.prs tbody,.prs tr,.prs td{display:block}.prs tr{padding:10px 0;border-bottom:1px solid var(--line)}.prs tr:last-child{border-bottom:0}.prs td{border:0;padding:3px 14px}.prs td.pr{min-width:0}.prs td[data-label]::before{content:attr(data-label) ": ";color:var(--muted);font-size:.85rem}}
 @media (max-width:900px){.grid{grid-template-columns:1fr 1fr}}
-@media (max-width:760px){.wrap{padding:0 16px}.hero{grid-template-columns:1fr;padding:48px 0 40px}.emblem{width:150px;height:150px;order:-1}h1{font-size:2.6rem}.stats{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}nav .nl{display:none}section{padding:56px 0}}
+@media (max-width:760px){.wrap{padding:0 16px}.hero{grid-template-columns:1fr;padding:48px 0 40px}.emblem{width:150px;height:150px;order:-1}h1{font-size:2.6rem}.stats{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}nav .nl:not(.keep){display:none}nav{gap:14px}section{padding:56px 0}}
 `;
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+// "skath<io>": the last two letters in the accent, as the SoMi site does with "So<Mi>".
+const orgName = (org) => esc(org).replace(/io$/, '<span class="io">io</span>');
+
+// The head and nav both pages share. `up` is the path back to the site root: '' on the homepage
+// and '../' on /prs/, which then finds brand/ and marks its own nav link as the current page.
+const top = ({ org, title, description, up, hasReleases }) => `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(description)}">
+<meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f7f6f2" media="(prefers-color-scheme: light)">
+<link rel="icon" href="${up}brand/mark.svg" type="image/svg+xml">
+<link rel="alternate" type="application/json" href="${up}projects.json" title="Projects feed">
+<style>${CSS}</style>
+<script src="${up}brand/theme.js"></script>
+</head>
+<body>
+<nav><a class="brand" href="${up || './'}"><img src="${up}brand/mark.svg" alt=""><span>${orgName(org)}</span></a><a class="nl" href="${up}#projects">Projects</a>${hasReleases ? `<a class="nl" href="${up}#releases">Releases</a>` : ''}<a class="nl keep" href="${up ? './" aria-current="page' : 'prs/'}">Pull requests</a><span class="sp"></span><button type="button" id="theme" hidden>Theme</button></nav>`;
 
 export function renderPage({ org, projects, generatedAt }) {
   const s = summarise(projects);
@@ -168,25 +207,9 @@ export function renderPage({ org, projects, generatedAt }) {
   const cards = projects.length
     ? `<ul class="grid">\n${projects.map(renderTile).join('\n')}\n</ul>`
     : '<p class="empty">No published projects yet.</p>';
-  // "skath<io>": the last two letters in the accent, as the SoMi site does with "So<Mi>".
   const releases = timeline(projects);
-  const name = esc(org).replace(/io$/, '<span class="io">io</span>');
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(org)}</title>
-<meta name="description" content="Open-source projects by ${esc(org)}: tools, libraries and the CI that ships them.">
-<meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f7f6f2" media="(prefers-color-scheme: light)">
-<link rel="icon" href="brand/mark.svg" type="image/svg+xml">
-<link rel="alternate" type="application/json" href="projects.json" title="Projects feed">
-<style>${CSS}</style>
-<script src="brand/theme.js"></script>
-</head>
-<body>
-<nav><a class="brand" href="./"><img src="brand/mark.svg" alt=""><span>${name}</span></a><a class="nl" href="#projects">Projects</a>${releases ? '<a class="nl" href="#releases">Releases</a>' : ''}<span class="sp"></span><button type="button" id="theme" hidden>Theme</button></nav>
+  const name = orgName(org);
+  return `${top({ org, title: org, description: `Open-source projects by ${org}: tools, libraries and the CI that ships them.`, up: '', hasReleases: Boolean(releases) })}
 <div class="wrap">
 <header class="hero"><div>
   <p class="eyebrow">${esc(eyebrow)}</p>
@@ -201,6 +224,60 @@ ${cards}
 </section>
 ${releases}
 <footer><p>${esc(org)} · Updated <time datetime="${esc(generatedAt)}">${esc(formatDate(generatedAt))}</time> · Data: <a href="projects.json">projects.json</a></p></footer>
+</div>
+</body>
+</html>
+`;
+}
+
+// The /prs/ page. Rows come from collectPulls, and every value is re-checked here: a row whose
+// repo is not a listed public project is dropped, a link must still be https, text is escaped.
+const PR_STATUS_CLASS = new Map([['Needs attention', 'bad'], ['Ready to merge', 'ok'], ['Ready for review', 'rev'], ['Waiting', 'wait'], ['No CI', 'none']]);
+const PR_LIMIT = 100;
+
+// "24 Nov 2026, 09:05", in UTC like formatDate.
+const formatTime = (iso) => {
+  const t = Date.parse(iso ?? '');
+  return Number.isNaN(t) ? 'an unknown time' : `${formatDate(iso)}, ${new Date(t).toISOString().slice(11, 16)}`;
+};
+
+function prRow(r, names) {
+  const pr = `#${esc(String(r.number))} ${esc(r.title)}`;
+  const url = httpsUrl(r.url);
+  const tile = `../#${esc(String(r.repo).toLowerCase())}`;
+  return `<tr><td><span class="st st-${PR_STATUS_CLASS.get(r.status) ?? 'none'}">${esc(r.status)}</span></td><td class="proj"><a href="${tile}">${esc(names.get(r.repo))}</a></td>`
+    + `<td class="pr">${url ? `<a href="${esc(url)}">${pr}</a>` : pr}</td><td data-label="Author">${esc(r.author)}</td>`
+    + `<td class="nw" data-label="CI">${esc(r.ci)}</td><td class="nw" data-label="Review">${esc(r.review)}</td>`
+    + `<td class="nw" data-label="Updated">${r.updatedAt ? `<time datetime="${esc(r.updatedAt)}">${esc(formatDate(r.updatedAt))}</time>` : ''}</td></tr>`;
+}
+
+function prBody(pulls, total, readAt, names) {
+  if (!Array.isArray(pulls)) return `<p class="empty">Pull request status could not be read at ${esc(formatTime(readAt))} UTC.</p>`;
+  const rows = pulls.filter((r) => names.has(r?.repo));
+  const asOf = `<p class="note">As of ${esc(formatTime(readAt))} UTC, rebuilt hourly.</p>`;
+  // Past the limit the note shows even with no row left, so an empty page never reads as complete.
+  const more = Number.isSafeInteger(total) && total > PR_LIMIT ? `<p class="note">Showing the first ${PR_LIMIT} of ${total} open pull requests.</p>\n` : '';
+  if (!rows.length) return `${asOf}\n${more}<p class="empty">No open pull requests.</p>`;
+  // Every status is counted, zeros too: "0 Needs attention" is itself the answer to the question.
+  const counts = [...PR_STATUS_CLASS.keys()].map((s) => `<li class="st-${PR_STATUS_CLASS.get(s)}"><b>${rows.filter((r) => r.status === s).length}</b> ${esc(s)}</li>`);
+  return `${asOf}
+<ul class="counts">${counts.join('')}</ul>
+${more}<div class="tablewrap"><table class="prs">
+<thead><tr><th>Status</th><th>Project</th><th>Pull request</th><th>Author</th><th>CI</th><th>Review</th><th>Updated</th></tr></thead>
+<tbody>
+${rows.map((r) => prRow(r, names)).join('\n')}
+</tbody></table></div>`;
+}
+
+export function renderPrsPage({ org, projects, pulls, total, readAt }) {
+  const names = new Map(projects.filter((p) => p.private === false).map((p) => [p.repo, p.name || p.repo]));
+  return `${top({ org, title: `Pull requests · ${org}`, description: `Open pull requests in the projects by ${org}, with CI and review state.`, up: '../', hasReleases: Boolean(timeline(projects)) })}
+<div class="wrap">
+<section id="pulls" class="first"><p class="eyebrow">Pull requests</p><h2>Open pull requests</h2>
+<p class="sub">Every open pull request in the public projects on the <a href="../">homepage</a>, from any author, bots included. Each links to GitHub, where the checks are.</p>
+${prBody(pulls, total, readAt, names)}
+</section>
+<footer><p>${esc(org)} · Read from GitHub at build time · <a href="../">Back to the homepage</a></p></footer>
 </div>
 </body>
 </html>

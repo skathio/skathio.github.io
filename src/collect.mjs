@@ -5,11 +5,13 @@
 //   - a private repo only when it carries a manifest (opt-in) that does not say "listed": false.
 // Skipped always: forks, archived repos, this homepage repo, and the org's `.github` repo.
 //
-// The client is injected ({ json(path), bytes(url) }) so tests run against fixtures.
+// The client is injected ({ json(path), bytes(url), graphql(query, variables) }) so tests run against fixtures.
 // A broken manifest or image in one repo never fails the build: it becomes a warning and
 // that tile falls back to defaults.
 
 import { MANIFEST_PATH, DEFAULT_COLOUR, validateManifest, checkImageBytes, imageExt } from './manifest.mjs';
+
+export { collectPulls, PR_STATUSES } from './pulls.mjs';
 
 const SKIP = (org) => new Set([`${org}.github.io`.toLowerCase(), '.github']);
 
@@ -176,6 +178,16 @@ export function githubClient({ token, fetchImpl = fetch, apiBase = 'https://api.
       // Twice the image limit, so checkImageBytes can report the real size.
       const buf = await readCapped(res, 2 * 1024 * 1024);
       return { buf, contentType: res.headers.get('content-type') ?? '' };
+    },
+    async graphql(query, variables) {
+      const res = await fetchImpl(`${apiBase}/graphql`, {
+        method: 'POST',
+        headers: headers({ Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ query, variables }),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      if (!res.ok) throw new Error(`POST /graphql: HTTP ${res.status}`);
+      return JSON.parse((await readCapped(res, 1024 * 1024)).toString('utf8'));
     },
   };
 }
