@@ -4,7 +4,7 @@
 // process (through --import) and answers the way GitHub does: a repo, its pull requests (open and in
 // created order unless asked otherwise), the check runs on a commit, its rulesets listed as summaries
 // and read by id. It logs every request, so a test can tell what the script read and what it wrote.
-// Also here: the starting config in .github/ci-rules.json, and the hashira pin in ci.yml.
+// Also here: the starting config in .github/ci-rules.json, and the hashira ref in ci.yml.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -172,16 +172,12 @@ test('.github/ci-rules.json starts with exactly the five repos, each requiring "
   for (const checks of Object.values(config.repos)) assert.deepEqual(checks, [CHECK]);
 });
 
-test('ci.yml pins all three hashira refs to v3.1.0 and keeps the ci job permissions', () => {
+test('ci.yml points all three hashira refs at the same @v3 tag and keeps the ci job permissions', () => {
   const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'ci.yml'), 'utf8');
-  const lines = yml.split('\n');
-  const refs = lines.map((l, i) => [l, i]).filter(([l]) => /skathio\/hashira\/\S+@/.test(l));
-  assert.equal(refs.length, 3);
-  for (const [l, i] of refs) {
-    assert.match(l, /@1bd415e21fb070c46f07e05bfaa70e42c0531342\s*$/);
-    assert.ok(lines.slice(i - 2, i).some((c) => c.trim() === '# skathio/hashira v3.1.0'), `no v3.1.0 comment above line ${i + 1}`);
-  }
-  assert.ok(!yml.includes('v3.0.0') && !yml.includes('2c8d52526cbce593a445f7572b599813503160f5'));
+  const refs = [...yml.matchAll(/skathio\/hashira\/(\S+)@(\S+)/g)];
+  assert.deepEqual(refs.map((m) => m[1]).sort(), ['.github/actions/pages-deploy', '.github/actions/pages-upload', '.github/workflows/static-webapp-ci.yml']);
+  for (const m of refs) assert.equal(m[2], 'v3', `${m[1]} is on @${m[2]}, not the shared @v3 tag`);
+  assert.ok(!/skathio\/hashira v3\.\d/.test(yml), 'no version comment left from a SHA pin');
   const ciJob = /\n {2}ci:\n([\s\S]*?)\n {2}\S/.exec(yml)[1];
   const perms = /permissions:\n((?: {6}.*\n)+)/.exec(`${ciJob}\n`)[1];
   const granted = Object.fromEntries([...perms.matchAll(/^ {6}([\w-]+): (\w+)/gm)].map((m) => [m[1], m[2]]));

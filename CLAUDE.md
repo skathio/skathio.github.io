@@ -56,7 +56,8 @@ value (`esc`, `isHexColour`, `httpsUrl`, `tilePath`). Keep both layers.
 - Private repos are opt-in and **fail closed**: any manifest error leaves them off the page.
 - The `repository_dispatch` payload is never read. A ping only triggers a rebuild.
 - Annotation text is escaped (`annot` in `scripts/build.mjs`), so a manifest cannot forge workflow commands.
-- Workflows use `permissions: {}` at the top level and actions pinned by full SHA, with a version comment.
+- Workflows use `permissions: {}` at the top level. Third-party actions are pinned by full SHA, with a
+  version comment. The org's own hashira refs track its moving major tag (`@v3`).
 
 ## Pitfalls
 
@@ -94,7 +95,7 @@ cannot affect the page (CI, docs, tests only) do not need it. Say so in the PR.
 ## CI and deploy
 
 - **`ci.yml`** is the one workflow, from hashira v3's static-webapp template. On a pull request
-  only the `ci` job runs: hashira's reusable `static-webapp-ci.yml` at a pinned SHA, with jobs
+  only the `ci` job runs: hashira's reusable `static-webapp-ci.yml@v3`, with jobs
   `ci / setup`, `ci / test` (`npm test` with coverage), `ci / scan-suite` (security scans),
   `ci / quality-gate` (SoMi's quality gate, at its default) and `ci / build-and-upload`
   (`npm run build:fixture`, offline). A PR never reaches the org.
@@ -105,9 +106,15 @@ cannot affect the page (CI, docs, tests only) do not need it. Say so in the PR.
   cannot do this build: it takes no secrets and would upload the fixture build. **The merge is
   the approval**: there is no manual gate. Merging to `main` publishes.
 - There is no release or versioning. A deploy is the release.
-- When bumping the hashira pin, change all three `skathio/hashira` refs in `ci.yml` together.
-  There is no `library_ref`: v3 checks its actions out at its own commit.
-- `ci / passed` is hashira v3.1.0's aggregate job, and the check `.github/ci-rules.json` requires.
+- All three `skathio/hashira` refs in `ci.yml` (the reusable workflow, `pages-upload` and
+  `pages-deploy`) track the moving `@v3` tag, so new v3.x releases apply with no PR here. Keep
+  them on the same ref and move them together to `@v4` when that ships
+  (`grep -rn hashira .github/workflows`). A test asserts they agree. There is no `library_ref`:
+  hashira checks its actions out at the commit the tag resolves to.
+- `ci / passed` is hashira's aggregate job and the one check `.github/ci-rules.json` requires. It
+  fails if any other CI job failed, and keeps one CI summary comment on the PR (gate, scans,
+  tests, coverage), edited in place. Keep the caller job's id `ci`, or the check name changes and
+  the ruleset blocks every merge.
 - Dependabot updates the GitHub Actions pins weekly, in one group.
 
 ## Conventions
