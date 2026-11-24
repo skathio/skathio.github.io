@@ -12,6 +12,7 @@
 import { MANIFEST_PATH, DEFAULT_COLOUR, validateManifest, checkImageBytes, imageExt } from './manifest.mjs';
 
 export { collectPulls, PR_STATUSES } from './pulls.mjs';
+export { collectRuns } from './runs.mjs';
 
 const SKIP = (org) => new Set([`${org}.github.io`.toLowerCase(), '.github']);
 
@@ -129,8 +130,10 @@ export async function collect({ client, org, warn = () => {} }) {
   // Most recent activity first: a release date if newer than the last push, else the push.
   const when = (p) => Math.max(Date.parse(p.release?.date ?? '') || 0, Date.parse(p.updated ?? '') || 0);
   projects.sort((a, b) => when(b) - when(a) || a.repo.localeCompare(b.repo));
+  // Each repo's default branch, for reading its workflow runs; a repo without one is left out.
+  const defaultBranches = new Map(all.filter((r) => typeof r.default_branch === 'string').map((r) => [String(r.name), r.default_branch]));
   // Every repo name, listed or not: the site must not publish a path any of them serves under.
-  return { projects, images, repoNames: all.map((r) => String(r.name)) };
+  return { projects, images, repoNames: all.map((r) => String(r.name)), defaultBranches };
 }
 
 // The real client: GitHub's REST API with an optional token, and plain https for image URLs.

@@ -1,29 +1,34 @@
 // Builds the site into a directory: index.html, projects.json (the feed), tiles/ (each project's
-// branding image), brand/ (the org's own mark) and prs/ (the open pull requests page).
+// branding image), brand/ (the org's own mark), prs/ (the open pull requests page) and ci/ (the
+// unresolved workflow failures).
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { renderPage, renderPrsPage } from './render.mjs';
+import { renderCiPage } from './ci-page.mjs';
 
 const BRAND = path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'brand');
 
 // prs is the PR read: pulls is null when it failed. Left out, or without a list, the page says it
-// could not be read; without a read time, the build's time stands in.
-export function writeSite({ out, org, projects, images, generatedAt, repoNames = [], prs }) {
+// could not be read; without a read time, the build's time stands in. runs is collectRuns' read
+// plus readAt, under the same rules.
+export function writeSite({ out, org, projects, images, generatedAt, repoNames = [], prs, runs }) {
   // A top-level entry named like any repo, listed or not, would hide its Pages site at /<repo>/.
   const reserved = new Set([...repoNames, ...projects.map((p) => p.repo)].map((n) => n.toLowerCase()));
-  for (const entry of ['index.html', 'projects.json', 'tiles', 'brand', 'prs', '.nojekyll']) {
+  for (const entry of ['index.html', 'projects.json', 'tiles', 'brand', 'prs', 'ci', '.nojekyll']) {
     if (reserved.has(entry.toLowerCase())) throw new Error(`a repo is named "${entry}", which the homepage needs as a path`);
   }
 
   fs.rmSync(out, { recursive: true, force: true });
   fs.mkdirSync(path.join(out, 'tiles'), { recursive: true });
   fs.mkdirSync(path.join(out, 'prs'));
+  fs.mkdirSync(path.join(out, 'ci'));
   fs.cpSync(BRAND, path.join(out, 'brand'), { recursive: true });
   fs.writeFileSync(path.join(out, '.nojekyll'), '');
   for (const [rel, buf] of images) fs.writeFileSync(path.join(out, rel), buf);
   fs.writeFileSync(path.join(out, 'index.html'), renderPage({ org, projects, generatedAt }));
   fs.writeFileSync(path.join(out, 'prs', 'index.html'), renderPrsPage({ org, projects, pulls: prs?.pulls ?? null, total: prs?.total ?? 0, readAt: prs?.readAt ?? generatedAt }));
+  fs.writeFileSync(path.join(out, 'ci', 'index.html'), renderCiPage({ org, projects, runs, readAt: runs?.readAt ?? generatedAt }));
 
   const feed = { org, generatedAt, projects };
   fs.writeFileSync(path.join(out, 'projects.json'), JSON.stringify(feed, null, 2) + '\n');
@@ -32,23 +37,30 @@ export function writeSite({ out, org, projects, images, generatedAt, repoNames =
 
 // A client over a fixture file, so the build runs with no network (tests, PR checks).
 export function fixtureClient(fixture) {
-  const notFound = () => null;
+  const missing = (p, allow404) => (allow404 ? null : Promise.reject(new Error(`GET ${p}: HTTP 404`)));
+  // Each REST path the build reads, answered from the fixture.
+  const routes = [
+    [/^\/orgs\/[^/]+\/repos\?.*page=(\d+)/, (m) => (m[1] === '1' ? fixture.repos : [])],
+    [/^\/repos\/[^/]+\/([^/]+)\/contents\/(.+)$/, (m, p, allow404) => {
+      const f = fixture.files?.[`${m[1]}/${m[2]}`];
+      if (f === undefined) return missing(p, allow404);
+      return { encoding: 'base64', content: Buffer.from(typeof f === 'string' ? f : JSON.stringify(f)).toString('base64') };
+    }],
+    [/^\/repos\/[^/]+\/([^/]+)\/releases\?/, (m) => {
+      const r = fixture.releases?.[m[1]];
+      return r === undefined ? [] : Array.isArray(r) ? r : [r];
+    }],
+    [/^\/repos\/[^/]+\/([^/]+)\/actions\/runs\?/, (m) => {
+      const r = fixture.runs?.[m[1]] ?? [];
+      return { total_count: r.length, workflow_runs: r };
+    }],
+    [/^\/repos\/[^/]+\/([^/]+)\/releases\/latest$/, (m, p, allow404) => fixture.latest?.[m[1]] ?? missing(p, allow404)],
+  ];
   return {
     async json(p, { allow404 = false } = {}) {
-      let m;
-      if ((m = /^\/orgs\/[^/]+\/repos\?.*page=(\d+)/.exec(p))) return m[1] === '1' ? fixture.repos : [];
-      if ((m = /^\/repos\/[^/]+\/([^/]+)\/contents\/(.+)$/.exec(p))) {
-        const f = fixture.files?.[`${m[1]}/${m[2]}`];
-        if (f === undefined) return allow404 ? notFound() : Promise.reject(new Error(`GET ${p}: HTTP 404`));
-        return { encoding: 'base64', content: Buffer.from(typeof f === 'string' ? f : JSON.stringify(f)).toString('base64') };
-      }
-      if ((m = /^\/repos\/[^/]+\/([^/]+)\/releases\?/.exec(p))) {
-        const r = fixture.releases?.[m[1]];
-        return r === undefined ? [] : Array.isArray(r) ? r : [r];
-      }
-      if ((m = /^\/repos\/[^/]+\/([^/]+)\/releases\/latest$/.exec(p))) {
-        const r = fixture.latest?.[m[1]];
-        return r ?? (allow404 ? notFound() : Promise.reject(new Error(`GET ${p}: HTTP 404`)));
+      for (const [re, answer] of routes) {
+        const m = re.exec(p);
+        if (m) return answer(m, p, allow404);
       }
       throw new Error(`fixture has no answer for ${p}`);
     },

@@ -72,7 +72,7 @@ export function summarise(projects) {
   };
 }
 
-function timeline(projects) {
+export function timeline(projects) {
   const rows = projects
     .filter((p) => p.release?.tag)
     .sort((a, b) => (Date.parse(b.release.date ?? '') || 0) - (Date.parse(a.release.date ?? '') || 0))
@@ -158,7 +158,7 @@ h2{font-size:2.1rem;letter-spacing:-.02em;margin:6px 0 10px}
 .prs th{color:var(--muted);font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 .prs tr:last-child td{border-bottom:0}
 .prs td.pr{min-width:240px}
-.prs td.pr a,.prs td.proj a{text-decoration:underline}
+.prs td.pr a,.prs td.proj a,.prs td.run a{text-decoration:underline}
 .prs .nw{white-space:nowrap}
 .st{display:inline-block;white-space:nowrap;border:1px solid currentColor;border-radius:999px;padding:0 10px;font-size:.78rem;font-weight:700}
 .st-bad{color:var(--accent)}.st-ok{color:var(--ok)}.st-rev{color:var(--info)}.st-wait{color:var(--wait)}.st-none{color:var(--muted)}
@@ -175,9 +175,10 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 // "skath<io>": the last two letters in the accent, as the SoMi site does with "So<Mi>".
 const orgName = (org) => esc(org).replace(/io$/, '<span class="io">io</span>');
 
-// The head and nav both pages share. `up` is the path back to the site root: '' on the homepage
-// and '../' on /prs/, which then finds brand/ and marks its own nav link as the current page.
-const top = ({ org, title, description, up, hasReleases }) => `<!doctype html>
+// The head and nav every page shares. `up` is the path back to the site root: '' on the homepage
+// and '../' on /prs/ and /ci/, whose own nav link `current` marks as the page you are on. Both
+// links are `keep`: they stay in the nav at phone width.
+export const top = ({ org, title, description, up, hasReleases, current = null }) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -193,7 +194,7 @@ const top = ({ org, title, description, up, hasReleases }) => `<!doctype html>
 <script src="${up}brand/local-time.js" defer></script>
 </head>
 <body>
-<nav><a class="brand" href="${up || './'}"><img src="${up}brand/mark.svg" alt=""><span>${orgName(org)}</span></a><a class="nl" href="${up}#projects">Projects</a>${hasReleases ? `<a class="nl" href="${up}#releases">Releases</a>` : ''}<a class="nl keep" href="${up ? './" aria-current="page' : 'prs/'}">Pull requests</a><span class="sp"></span><button type="button" id="theme" hidden>Theme</button></nav>`;
+<nav><a class="brand" href="${up || './'}"><img src="${up}brand/mark.svg" alt=""><span>${orgName(org)}</span></a><a class="nl" href="${up}#projects">Projects</a>${hasReleases ? `<a class="nl" href="${up}#releases">Releases</a>` : ''}<a class="nl keep" href="${current === 'prs' ? './" aria-current="page' : `${up}prs/`}">Pull requests</a><a class="nl keep" href="${current === 'ci' ? './" aria-current="page' : `${up}ci/`}">CI</a><span class="sp"></span><button type="button" id="theme" hidden>Theme</button></nav>`;
 
 export function renderPage({ org, projects, generatedAt }) {
   const s = summarise(projects);
@@ -238,7 +239,7 @@ const PR_LIMIT = 100;
 
 // "24 Nov 2026, 09:05 UTC", like formatDate. A static page cannot know the visitor's zone, so
 // brand/local-time.js rewrites it in the browser; without script the UTC time is still correct.
-const formatTime = (iso) => {
+export const formatTime = (iso) => {
   const t = Date.parse(iso ?? '');
   return Number.isNaN(t)
     ? 'an unknown time'
@@ -275,7 +276,7 @@ ${rows.map((r) => prRow(r, names)).join('\n')}
 
 export function renderPrsPage({ org, projects, pulls, total, readAt }) {
   const names = new Map(projects.filter((p) => p.private === false).map((p) => [p.repo, p.name || p.repo]));
-  return `${top({ org, title: `Pull requests · ${org}`, description: `Open pull requests in the projects by ${org}, with CI and review state.`, up: '../', hasReleases: Boolean(timeline(projects)) })}
+  return `${top({ org, title: `Pull requests · ${org}`, description: `Open pull requests in the projects by ${org}, with CI and review state.`, up: '../', hasReleases: Boolean(timeline(projects)), current: 'prs' })}
 <div class="wrap">
 <section id="pulls" class="first"><p class="eyebrow">Pull requests</p><h2>Open pull requests</h2>
 <p class="sub">Every open pull request in the public projects on the <a href="../">homepage</a>, from any author, bots included. Each links to GitHub, where the checks are.</p>

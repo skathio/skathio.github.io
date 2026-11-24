@@ -1,0 +1,10 @@
+{
+  "repos": {
+    "bento": ["ci / passed"],
+    "hinokami": ["ci / passed"],
+    "maneki": ["ci / passed"],
+    "rogue": ["ci / passed"],
+    "somi": ["ci / passed"],
+    "skathio.github.io": ["ci / passed"]
+  }
+}

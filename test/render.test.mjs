@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderPage, renderTile, esc, summarise } from '../src/render.mjs';
+import { renderCiPage } from '../src/ci-page.mjs';
 
 const base = { repo: 'x', name: 'X', tagline: '', colour: '#123456', image: null, links: [], private: false, repoUrl: null, site: null, release: null };
 
@@ -96,4 +97,45 @@ test('the page has a dark mode, a viewport and the feed link', () => {
 
 test('an empty org renders a message, not an empty grid', () => {
   assert.match(renderPage({ org: 'skathio', projects: [], generatedAt: '' }), /No published projects yet/);
+});
+
+// The /ci/ page's own re-checks, past what collectRuns already checked.
+const ciRow = (f = {}) => ({ repo: 'x', workflow: 'CI', event: 'push', since: '2026-11-20T10:00:00.000Z', count: 2, url: 'https://github.com/skathio/x/actions/runs/42', ...f });
+const ci = (runs) => renderCiPage({ org: 'skathio', projects: [base, { ...base, repo: 'p', name: 'P', private: true }], runs, readAt: '2026-11-24T09:05:00Z' });
+
+test('the CI page shows a listed public project\'s failing row with its run link', () => {
+  const html = ci({ failing: [ciRow()], unread: [] });
+  assert.match(html, /<a href="\.\.\/#x">X<\/a>/);
+  assert.match(html, /href="https:\/\/github\.com\/skathio\/x\/actions\/runs\/42">Latest failed run<\/a>/);
+  assert.match(html, /<td class="nw" data-label="Failed runs">2<\/td>/);
+});
+
+test('the CI page drops a row for an unlisted or private repo, or whose link is not that repo\'s run page', () => {
+  for (const row of [
+    ciRow({ repo: 'p', url: 'https://github.com/skathio/p/actions/runs/42' }),
+    ciRow({ repo: 'nope', url: 'https://github.com/skathio/nope/actions/runs/42' }),
+    ciRow({ url: 'https://github.com/other/x/actions/runs/42' }),
+    ciRow({ url: 'https://github.com/skathio/y/actions/runs/42' }),
+    ciRow({ url: 'https://github.com/skathio/x/actions/runs/42/attempts/2' }),
+    ciRow({ url: 'https://github.com/skathio/x/actions/runs/0' }),
+    ciRow({ url: 'https://github.com/skathio/x/actions/runs/99999999999999999' }),
+    ciRow({ url: 'javascript:alert(1)' }),
+    ciRow({ url: 42 }),
+  ]) {
+    const html = ci({ failing: [row], unread: [] });
+    assert.ok(!/<table\b/.test(html), JSON.stringify(row));
+    assert.ok(html.includes('Nothing is failing on the default branches.'));
+  }
+});
+
+test('the CI page never reads as all clear when the runs or a repo could not be read', () => {
+  for (const runs of [undefined, null, {}, { failing: 'x' }]) {
+    const html = ci(runs);
+    assert.ok(!html.includes('Nothing is failing'), JSON.stringify(runs));
+    assert.match(html, /Workflow runs could not be read at <time datetime="2026-11-24T09:05:00.000Z" data-local>24 Nov 2026, 09:05 UTC<\/time>\./);
+  }
+  const html = ci({ failing: [], unread: ['x', 'p'] });
+  assert.ok(!html.includes('Nothing is failing on the default branches.'));
+  assert.match(html, /The workflow runs of <b>x<\/b> could not be read, so their failures are not shown\.<\/p>\n<p class="empty">Nothing is failing in the projects that could be read\.<\/p>/);
+  assert.ok(!html.includes('<b>p</b>'), 'a private unread repo is not named');
 });
