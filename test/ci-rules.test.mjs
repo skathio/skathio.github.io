@@ -165,10 +165,10 @@ const writesTo = (run, repo) => run.writes.filter((w) => w.path.startsWith(`/rep
 
 // ---- The starting config, the pin and the workflows.
 
-test('.github/ci-rules.json starts with exactly the six repos, each requiring "ci / passed"', () => {
+test('.github/ci-rules.json starts with exactly the five repos, each requiring "ci / passed"', () => {
   const config = JSON.parse(fs.readFileSync(path.join(ROOT, '.github', 'ci-rules.json'), 'utf8'));
   assert.deepEqual(Object.keys(config), ['repos']);
-  assert.deepEqual(Object.keys(config.repos).sort(), ['bento', 'hinokami', 'maneki', 'rogue', 'skathio.github.io', 'somi']);
+  assert.deepEqual(Object.keys(config.repos).sort(), ['bento', 'hinokami', 'rogue', 'skathio.github.io', 'somi']);
   for (const checks of Object.values(config.repos)) assert.deepEqual(checks, [CHECK]);
 });
 
@@ -260,7 +260,7 @@ test('--org names the org the script reads', () => {
 test('without options the script reads .github/ci-rules.json for the skathio org', () => {
   const run = runScript({});
   const read = new Set(run.requests.map((r) => /^\/repos\/skathio\/([^/]+)/.exec(r.path)?.[1]));
-  assert.deepEqual([...read].sort(), ['bento', 'hinokami', 'maneki', 'rogue', 'skathio.github.io', 'somi']);
+  assert.deepEqual([...read].sort(), ['bento', 'hinokami', 'rogue', 'skathio.github.io', 'somi']);
   assert.equal(run.status, 1, 'none of the repos exist in the fake, so each is refused');
 });
 
