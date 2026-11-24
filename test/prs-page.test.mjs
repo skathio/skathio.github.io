@@ -149,7 +149,7 @@ test('a count per status shows above the table', () => {
 
 test('the page says when the data was read: As of <date and time> UTC, rebuilt hourly', () => {
   const { prs } = build({ pulls: [row()], readAt: '2026-11-24T09:05:00Z' });
-  const m = /As of (.+?) UTC, rebuilt hourly/.exec(text(prs));
+  const m = /As of (.+?) UTC\s*, rebuilt hourly/.exec(text(prs));
   assert.ok(m, 'as-of line');
   assert.match(m[1], /2026/);
   assert.match(m[1], /\b0?9[:.]05\b/);
@@ -265,4 +265,37 @@ test('a malformed PR response still builds the homepage, with one warning and th
   const prs = fs.readFileSync(path.join(out, 'prs', 'index.html'), 'utf8');
   assert.match(text(prs), /Pull request status could not be read at .+\./);
   assert.ok(!/<table\b/.test(prs));
+});
+
+// Runs brand/local-time.js against a stand-in DOM, in a child process because Date formatting
+// follows TZ, which is fixed per process. Returns each time element's text afterwards.
+function runLocalTime(times, tz) {
+  const src = fs.readFileSync(path.join(ROOT, 'brand', 'local-time.js'), 'utf8');
+  const child = spawnSync(process.execPath, ['--input-type=module', '-e', `
+    const nodes = ${JSON.stringify(times)}.map((dt) => ({ textContent: 'UTC text', getAttribute: (n) => (n === 'datetime' ? dt : null) }));
+    let ready;
+    globalThis.document = { addEventListener: (_, fn) => { ready = fn; }, querySelectorAll: (q) => (q === 'time[data-local]' ? nodes : []) };
+    new Function(${JSON.stringify(src)})();
+    ready();
+    console.log(JSON.stringify(nodes.map((n) => n.textContent)));
+  `], { env: { ...process.env, TZ: tz }, encoding: 'utf8' });
+  assert.equal(child.status, 0, child.stderr);
+  return JSON.parse(child.stdout);
+}
+
+test('both PR page times carry their instant for the browser to show in local time, and the page loads the script', () => {
+  const { prs } = build({ pulls: [row()], readAt: '2026-11-24T09:05:00Z' });
+  assert.match(prs, /As of <time datetime="2026-11-24T09:05:00\.000Z" data-local>/);
+  assert.match(prs, /<script src="\.\.\/brand\/local-time\.js" defer><\/script>/);
+  const failed = build({ pulls: null, readAt: '2026-11-24T09:05:00Z' }).prs;
+  assert.match(failed, /could not be read at <time datetime="2026-11-24T09:05:00\.000Z" data-local>/);
+});
+
+test('local-time.js shows the read time in the visitor zone, and leaves a bad datetime alone', () => {
+  const [berlin, bad] = runLocalTime(['2026-11-24T09:05:00.000Z', 'not a date'], 'Europe/Berlin');
+  assert.match(berlin, /^24 Nov 2026, 10:05 /);
+  assert.ok(!berlin.includes('UTC'), berlin);
+  assert.equal(bad, 'UTC text');
+  const [tokyo] = runLocalTime(['2026-11-24T20:05:00.000Z'], 'Asia/Tokyo');
+  assert.match(tokyo, /^25 Nov 2026, 05:05 /, 'the date moves with the zone');
 });
