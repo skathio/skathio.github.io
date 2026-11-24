@@ -9,6 +9,7 @@
       "has_pages": true,
       "html_url": "https://github.com/skathio/somi",
       "description": "SoMi",
+      "default_branch": "main",
       "pushed_at": "2026-11-09T10:00:00Z"
     },
     {
@@ -20,6 +21,7 @@
       "has_pages": true,
       "html_url": "https://github.com/skathio/hinokami",
       "description": "Pizza helper",
+      "default_branch": "main",
       "pushed_at": "2026-10-01T00:00:00Z"
     },
     {
@@ -31,6 +33,7 @@
       "has_pages": false,
       "html_url": "https://github.com/skathio/rogue",
       "description": "Rogue CQS library",
+      "default_branch": "main",
       "pushed_at": "2026-07-16T00:00:00Z"
     },
     {
@@ -42,6 +45,7 @@
       "has_pages": false,
       "html_url": "https://github.com/skathio/secret-js",
       "description": "never listed",
+      "default_branch": "main",
       "pushed_at": "2026-11-01T00:00:00Z"
     },
     {
@@ -53,6 +57,7 @@
       "has_pages": false,
       "html_url": "https://github.com/skathio/optin-js",
       "description": "private but opted in",
+      "default_branch": "main",
       "pushed_at": "2026-08-01T00:00:00Z"
     },
     {
@@ -64,6 +69,7 @@
       "has_pages": false,
       "html_url": "https://github.com/skathio/forked",
       "description": null,
+      "default_branch": "main",
       "pushed_at": "2026-11-01T00:00:00Z"
     },
     {
@@ -75,6 +81,7 @@
       "has_pages": false,
       "html_url": "https://github.com/skathio/old",
       "description": null,
+      "default_branch": "main",
       "pushed_at": "2026-11-01T00:00:00Z"
     },
     {
@@ -86,6 +93,7 @@
       "has_pages": true,
       "html_url": "https://github.com/skathio/skathio.github.io",
       "description": null,
+      "default_branch": "main",
       "pushed_at": "2026-11-01T00:00:00Z"
     },
     {
@@ -97,6 +105,7 @@
       "has_pages": false,
       "html_url": "https://github.com/skathio/.github",
       "description": null,
+      "default_branch": "main",
       "pushed_at": "2026-11-01T00:00:00Z"
     },
     {
@@ -108,6 +117,7 @@
       "has_pages": false,
       "html_url": "https://github.com/skathio/hidden",
       "description": "public but opted out",
+      "default_branch": "main",
       "pushed_at": "2026-11-01T00:00:00Z"
     },
     {
@@ -119,6 +129,7 @@
       "has_pages": false,
       "html_url": "https://github.com/skathio/badsvg",
       "description": "ships an svg with script",
+      "default_branch": "main",
       "pushed_at": "2026-05-01T00:00:00Z"
     },
     {
@@ -130,6 +141,7 @@
       "has_pages": false,
       "html_url": "https://github.com/skathio/badmanifest",
       "description": "has bad fields",
+      "default_branch": "main",
       "pushed_at": "2026-04-01T00:00:00Z"
     },
     {
@@ -141,6 +153,7 @@
       "has_pages": false,
       "html_url": "https://github.com/skathio/remote",
       "description": "image from a URL",
+      "default_branch": "main",
       "pushed_at": "2026-03-01T00:00:00Z"
     },
     {
@@ -152,6 +165,7 @@
       "has_pages": false,
       "html_url": "https://github.com/skathio/broken-js",
       "description": "must stay private",
+      "default_branch": "main",
       "pushed_at": "2026-11-05T00:00:00Z"
     },
     {
@@ -163,6 +177,7 @@
       "has_pages": false,
       "html_url": "https://github.com/skathio/stringly-js",
       "description": "must stay private",
+      "default_branch": "main",
       "pushed_at": "2026-11-05T00:00:00Z"
     }
   ],
@@ -619,6 +634,146 @@
               }
             }
           ]
+        }
+      }
+    ]
+  },
+  "runs": {
+    "somi": [
+      {
+        "id": 9001,
+        "name": "Fork CI",
+        "path": ".github/workflows/fork.yml",
+        "event": "push",
+        "status": "completed",
+        "conclusion": "failure",
+        "created_at": "2026-11-20T12:00:00Z",
+        "html_url": "https://github.com/skathio/somi/actions/runs/9001",
+        "head_repository": {
+          "full_name": "someone/somi"
+        }
+      },
+      {
+        "id": 9002,
+        "name": "CI",
+        "path": ".github/workflows/ci.yml",
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "failure",
+        "created_at": "2026-11-20T11:00:00Z",
+        "html_url": "https://github.com/skathio/somi/actions/runs/9002",
+        "head_repository": {
+          "full_name": "skathio/somi"
+        }
+      },
+      {
+        "id": 9003,
+        "name": "CI",
+        "path": ".github/workflows/ci.yml",
+        "event": "push",
+        "status": "completed",
+        "conclusion": "failure",
+        "created_at": "2026-11-20T10:00:00Z",
+        "html_url": "https://github.com/skathio/somi/actions/runs/9003",
+        "head_repository": {
+          "full_name": "skathio/somi"
+        }
+      },
+      {
+        "id": 9004,
+        "name": "CI",
+        "path": ".github/workflows/ci.yml",
+        "event": "push",
+        "status": "completed",
+        "conclusion": "failure",
+        "created_at": "2026-11-19T10:00:00Z",
+        "html_url": "https://github.com/skathio/somi/actions/runs/9004",
+        "head_repository": {
+          "full_name": "skathio/somi"
+        }
+      },
+      {
+        "id": 9005,
+        "name": "CI",
+        "path": ".github/workflows/ci.yml",
+        "event": "push",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-18T10:00:00Z",
+        "html_url": "https://github.com/skathio/somi/actions/runs/9005",
+        "head_repository": {
+          "full_name": "skathio/somi"
+        }
+      }
+    ],
+    "hinokami": [
+      {
+        "id": 9101,
+        "name": "CI",
+        "path": ".github/workflows/ci.yml",
+        "event": "push",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-20T09:00:00Z",
+        "html_url": "https://github.com/skathio/hinokami/actions/runs/9101",
+        "head_repository": {
+          "full_name": "skathio/hinokami"
+        }
+      },
+      {
+        "id": 9102,
+        "name": "CI",
+        "path": ".github/workflows/ci.yml",
+        "event": "push",
+        "status": "completed",
+        "conclusion": "failure",
+        "created_at": "2026-11-19T09:00:00Z",
+        "html_url": "https://github.com/skathio/hinokami/actions/runs/9102",
+        "head_repository": {
+          "full_name": "skathio/hinokami"
+        }
+      }
+    ],
+    "rogue": [
+      {
+        "id": 9201,
+        "name": "github_actions in /. - Update #12",
+        "path": "dynamic/dependabot/dependabot-updates",
+        "event": "dynamic",
+        "status": "completed",
+        "conclusion": "failure",
+        "created_at": "2026-11-21T08:00:00Z",
+        "html_url": "https://github.com/skathio/rogue/actions/runs/9201",
+        "head_repository": {
+          "full_name": "skathio/rogue"
+        }
+      },
+      {
+        "id": 9202,
+        "name": "npm_and_yarn in /. - Update #11",
+        "path": "dynamic/dependabot/dependabot-updates",
+        "event": "dynamic",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-21T07:00:00Z",
+        "html_url": "https://github.com/skathio/rogue/actions/runs/9202",
+        "head_repository": {
+          "full_name": "skathio/rogue"
+        }
+      }
+    ],
+    "remote": [
+      {
+        "id": 9301,
+        "name": "Nightly",
+        "path": ".github/workflows/nightly.yml",
+        "event": "schedule",
+        "status": "completed",
+        "conclusion": "failure",
+        "created_at": "2026-11-22T03:00:00Z",
+        "html_url": "https://github.com/skathio/remote/actions/runs/9301/attempts/2",
+        "head_repository": {
+          "full_name": "skathio/remote"
         }
       }
     ]

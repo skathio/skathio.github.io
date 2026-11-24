@@ -6,7 +6,7 @@
 // job's own token, which sees public repos only. Warnings go out as workflow annotations.
 import fs from 'node:fs';
 import { parseArgs } from 'node:util';
-import { collect, collectPulls, githubClient } from '../src/collect.mjs';
+import { collect, collectPulls, collectRuns, githubClient } from '../src/collect.mjs';
 import { writeSite, fixtureClient } from '../src/build.mjs';
 
 const { values } = parseArgs({
@@ -31,10 +31,12 @@ const inActions = process.env.GITHUB_ACTIONS === 'true';
 const annot = (s) => String(s).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
 const warn = (repo, msg) => console.warn(inActions ? `::warning title=${annot(repo)}::${annot(msg)}` : `warning: ${repo}: ${msg}`);
 
-const { projects, images, repoNames } = await collect({ client, org: values.org, warn });
+const { projects, images, repoNames, defaultBranches } = await collect({ client, org: values.org, warn });
 // PRs are filtered against what collect listed, so who is shown stays decided in one place.
 // A failed read is a warning and pulls null, never a failed build.
 const prs = { ...(await collectPulls({ client, org: values.org, projects, repoNames, warn })), readAt: new Date().toISOString() };
-const feed = writeSite({ out: values.out, org: values.org, projects, images, repoNames, prs, generatedAt: new Date().toISOString() });
+// Runs are read for the same listed public projects. An unread repo is a warning, named on /ci/.
+const runs = { ...(await collectRuns({ client, org: values.org, projects, defaultBranches, warn })), readAt: new Date().toISOString() };
+const feed = writeSite({ out: values.out, org: values.org, projects, images, repoNames, prs, runs, generatedAt: new Date().toISOString() });
 const prLine = prs.pulls ? `${prs.pulls.length} shown of ${prs.total}` : 'not read';
 console.log(`built ${values.out}: ${feed.projects.length} projects (${feed.projects.map((p) => p.repo).join(', ')}); open pull requests: ${prLine}`);

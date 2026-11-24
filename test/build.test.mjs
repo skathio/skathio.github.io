@@ -12,7 +12,7 @@ const p = (repo) => ({ repo, name: repo, tagline: '', colour: '#123456', image: 
 test('the site holds the page, the feed, the tiles and the brand', () => {
   const out = tmp();
   const feed = writeSite({ out, org: 'skathio', projects: [p('somi')], images: new Map([['tiles/somi.png', Buffer.from('x')]]), generatedAt: '2026-11-10T00:00:00Z' });
-  for (const f of ['index.html', 'projects.json', 'tiles/somi.png', 'brand/mark.svg', '.nojekyll']) assert.ok(fs.existsSync(path.join(out, f)), f);
+  for (const f of ['index.html', 'projects.json', 'tiles/somi.png', 'brand/mark.svg', 'prs/index.html', 'ci/index.html', '.nojekyll']) assert.ok(fs.existsSync(path.join(out, f)), f);
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(out, 'projects.json'), 'utf8')), feed);
 });
 

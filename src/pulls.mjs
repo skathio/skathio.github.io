@@ -42,12 +42,12 @@ function prStatus(isDraft, ci, review, mergeable) {
 }
 
 // A cut never leaves half a surrogate pair at the end.
-const cut = (s, n) => s.slice(0, n).replace(/[\uD800-\uDBFF]$/, '');
+export const cut = (s, n) => s.slice(0, n).replace(/[\uD800-\uDBFF]$/, '');
 
 // Control and bidi-override characters could reorder or hide what a title or login says on the
 // page, so they go before the cut and never count towards its length.
 const HIDDEN = /[\u0000-\u001F\u007F-\u009F\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/g;
-const visible = (s) => s.replace(HIDDEN, '');
+export const visible = (s) => s.replace(HIDDEN, '');
 
 // The login is cut to GitHub's 39 characters, keeping a `[bot]` suffix on top.
 function authorLogin(author) {

@@ -44,8 +44,8 @@ permissions: {}
 jobs:
   ci:
     if: github.event_name == 'pull_request'
-    # skathio/hashira v3.0.0
-    uses: skathio/hashira/.github/workflows/static-webapp-ci.yml@2c8d52526cbce593a445f7572b599813503160f5
+    # skathio/hashira v3.1.0
+    uses: skathio/hashira/.github/workflows/static-webapp-ci.yml@1bd415e21fb070c46f07e05bfaa70e42c0531342
     permissions:
       contents: read # check out the repository
       id-token: write # upload-pages-artifact authenticates to Pages
@@ -79,8 +79,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.HOMEPAGE_READ_TOKEN || github.token }}
         run: npm run build
-      # skathio/hashira v3.0.0
-      - uses: skathio/hashira/.github/actions/pages-upload@2c8d52526cbce593a445f7572b599813503160f5
+      # skathio/hashira v3.1.0
+      - uses: skathio/hashira/.github/actions/pages-upload@1bd415e21fb070c46f07e05bfaa70e42c0531342
         with:
           path: dist
 
@@ -101,6 +101,6 @@ jobs:
       pages: write      # deploy-pages
       id-token: write   # deploy-pages authenticates via OIDC
     steps:
-      # skathio/hashira v3.0.0
+      # skathio/hashira v3.1.0
       - id: deploy
-        uses: skathio/hashira/.github/actions/pages-deploy@2c8d52526cbce593a445f7572b599813503160f5
+        uses: skathio/hashira/.github/actions/pages-deploy@1bd415e21fb070c46f07e05bfaa70e42c0531342
