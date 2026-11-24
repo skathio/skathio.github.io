@@ -7,7 +7,7 @@
 #                             fixture with no token and no network), so a PR can never reach
 #                             the org.
 #   - push to main          : a change to the homepage itself.
-#   - schedule (every 6 h)  : picks up new repos, releases and manifest edits without a ping.
+#   - schedule (hourly)     : picks up new repos, releases, manifest edits and open PRs without a ping.
 #   - repository_dispatch   : `project-released` (after a release) or `project-updated` (after a
 #                             manifest or image change), sent by a project repo so its tile
 #                             updates within minutes. Both only mean "rebuild".
@@ -34,7 +34,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '17 */6 * * *'
+    - cron: '17 * * * *'
   repository_dispatch:
     types: [project-released, project-updated]
   workflow_dispatch:

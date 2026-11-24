@@ -241,5 +241,386 @@
       "published_at": "2026-08-02T00:00:00Z",
       "html_url": "https://github.com/skathio/optin-js/releases/tag/v0.3.0"
     }
+  },
+  "pulls": {
+    "issueCount": 14,
+    "nodes": [
+      {
+        "repository": {
+          "name": "somi",
+          "isPrivate": false
+        },
+        "number": 412,
+        "title": "build(deps): bump actions/checkout from 4.2.1 to 4.2.2",
+        "url": "https://github.com/skathio/somi/pull/412",
+        "isDraft": false,
+        "author": {
+          "login": "dependabot"
+        },
+        "updatedAt": "2026-11-23T09:12:00Z",
+        "reviewDecision": null,
+        "mergeable": "UNKNOWN",
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "state": "FAILURE"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "repository": {
+          "name": "rogue",
+          "isPrivate": false
+        },
+        "number": 58,
+        "title": "Add a timeout to the query pipeline",
+        "url": "https://github.com/skathio/rogue/pull/58",
+        "isDraft": false,
+        "author": {
+          "login": "octocat"
+        },
+        "updatedAt": "2026-11-22T16:40:00Z",
+        "reviewDecision": null,
+        "mergeable": "CONFLICTING",
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "state": "SUCCESS"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "repository": {
+          "name": "hinokami",
+          "isPrivate": false
+        },
+        "number": 31,
+        "title": "Pizza size picker on the order page",
+        "url": "https://github.com/skathio/hinokami/pull/31",
+        "isDraft": false,
+        "author": {
+          "login": "skathi"
+        },
+        "updatedAt": "2026-11-21T11:05:00Z",
+        "reviewDecision": "CHANGES_REQUESTED",
+        "mergeable": "UNKNOWN",
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "state": "SUCCESS"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "repository": {
+          "name": "somi",
+          "isPrivate": false
+        },
+        "number": 409,
+        "title": "build(deps): bump the npm group with 3 updates",
+        "url": "https://github.com/skathio/somi/pull/409",
+        "isDraft": false,
+        "author": {
+          "login": "dependabot"
+        },
+        "updatedAt": "2026-11-20T07:00:00Z",
+        "reviewDecision": "APPROVED",
+        "mergeable": "MERGEABLE",
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "state": "SUCCESS"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "repository": {
+          "name": "remote",
+          "isPrivate": false
+        },
+        "number": 12,
+        "title": "build(deps): bump github/codeql-action from 3.27.0 to 3.27.5",
+        "url": "https://github.com/skathio/remote/pull/12",
+        "isDraft": false,
+        "author": {
+          "login": "renovate[bot]"
+        },
+        "updatedAt": "2026-11-23T04:30:00Z",
+        "reviewDecision": null,
+        "mergeable": "UNKNOWN",
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "state": "SUCCESS"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "repository": {
+          "name": "rogue",
+          "isPrivate": false
+        },
+        "number": 57,
+        "title": "Document the cancellation rules",
+        "url": "https://github.com/skathio/rogue/pull/57",
+        "isDraft": false,
+        "author": {
+          "login": "octocat"
+        },
+        "updatedAt": "2026-11-19T13:20:00Z",
+        "reviewDecision": "REVIEW_REQUIRED",
+        "mergeable": "UNKNOWN",
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "state": "SUCCESS"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "repository": {
+          "name": "hinokami",
+          "isPrivate": false
+        },
+        "number": 30,
+        "title": "WIP: dark mode for the menu",
+        "url": "https://github.com/skathio/hinokami/pull/30",
+        "isDraft": true,
+        "author": {
+          "login": "skathi"
+        },
+        "updatedAt": "2026-11-18T18:00:00Z",
+        "reviewDecision": null,
+        "mergeable": "UNKNOWN",
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "state": "FAILURE"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "repository": {
+          "name": "somi",
+          "isPrivate": false
+        },
+        "number": 411,
+        "title": "build(deps): bump node from 22 to 24",
+        "url": "https://github.com/skathio/somi/pull/411",
+        "isDraft": false,
+        "author": {
+          "login": "dependabot"
+        },
+        "updatedAt": "2026-11-24T08:01:00Z",
+        "reviewDecision": null,
+        "mergeable": "UNKNOWN",
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "state": "PENDING"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "repository": {
+          "name": "badmanifest",
+          "isPrivate": false
+        },
+        "number": 3,
+        "title": "Fix the manifest colour",
+        "url": "https://github.com/skathio/badmanifest/pull/3",
+        "isDraft": false,
+        "author": {
+          "login": "octocat"
+        },
+        "updatedAt": "2026-11-17T10:00:00Z",
+        "reviewDecision": null,
+        "mergeable": "UNKNOWN",
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": null
+              }
+            }
+          ]
+        }
+      },
+      {
+        "repository": {
+          "name": "optin-js",
+          "isPrivate": true
+        },
+        "number": 5,
+        "title": "Private repo PR: must never show",
+        "url": "https://github.com/skathio/optin-js/pull/5",
+        "isDraft": false,
+        "author": {
+          "login": "dependabot"
+        },
+        "updatedAt": "2026-11-24T00:00:00Z",
+        "reviewDecision": null,
+        "mergeable": "UNKNOWN",
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "state": "SUCCESS"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "repository": {
+          "name": "optin-js",
+          "isPrivate": false
+        },
+        "number": 6,
+        "title": "Private tile reported public: must never show",
+        "url": "https://github.com/skathio/optin-js/pull/6",
+        "isDraft": false,
+        "author": {
+          "login": "dependabot"
+        },
+        "updatedAt": "2026-11-24T00:00:00Z",
+        "reviewDecision": null,
+        "mergeable": "UNKNOWN",
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "state": "SUCCESS"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "repository": {
+          "name": "secret-js",
+          "isPrivate": true
+        },
+        "number": 2,
+        "title": "Unlisted private repo PR: must never show",
+        "url": "https://github.com/skathio/secret-js/pull/2",
+        "isDraft": false,
+        "author": {
+          "login": "dependabot"
+        },
+        "updatedAt": "2026-11-24T00:00:00Z",
+        "reviewDecision": null,
+        "mergeable": "UNKNOWN",
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "state": "SUCCESS"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "repository": {
+          "name": "hidden",
+          "isPrivate": false
+        },
+        "number": 9,
+        "title": "Unlisted repo PR: must never show",
+        "url": "https://github.com/skathio/hidden/pull/9",
+        "isDraft": false,
+        "author": {
+          "login": "dependabot"
+        },
+        "updatedAt": "2026-11-24T00:00:00Z",
+        "reviewDecision": null,
+        "mergeable": "UNKNOWN",
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "state": "SUCCESS"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "repository": {
+          "name": "badsvg",
+          "isPrivate": false
+        },
+        "number": 4,
+        "title": "PR with a URL that is not its own: dropped",
+        "url": "https://evil.example/skathio/badsvg/pull/4",
+        "isDraft": false,
+        "author": {
+          "login": "dependabot"
+        },
+        "updatedAt": "2026-11-24T00:00:00Z",
+        "reviewDecision": null,
+        "mergeable": "UNKNOWN",
+        "commits": {
+          "nodes": [
+            {
+              "commit": {
+                "statusCheckRollup": {
+                  "state": "SUCCESS"
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
   }
 }
