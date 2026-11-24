@@ -44,13 +44,14 @@ permissions: {}
 jobs:
   ci:
     if: github.event_name == 'pull_request'
-    # skathio/hashira v3.1.0
-    uses: skathio/hashira/.github/workflows/static-webapp-ci.yml@1bd415e21fb070c46f07e05bfaa70e42c0531342
+    # The job id `ci` names the required check `ci / passed`; keep it. All three hashira refs
+    # track the moving v3 tag, so v3.x releases apply with no PR here. Move them to v4 together.
+    uses: skathio/hashira/.github/workflows/static-webapp-ci.yml@v3
     permissions:
       contents: read # check out the repository
       id-token: write # upload-pages-artifact authenticates to Pages
       pages: write # upload-pages-artifact stores the site for deploy
-      pull-requests: write # coverage comment on the pull request
+      pull-requests: write # the passed job keeps one CI summary comment on the pull request
       security-events: write # upload CodeQL results when CodeQL is enabled
     with:
       node_version: '24'
@@ -79,8 +80,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.HOMEPAGE_READ_TOKEN || github.token }}
         run: npm run build
-      # skathio/hashira v3.1.0
-      - uses: skathio/hashira/.github/actions/pages-upload@1bd415e21fb070c46f07e05bfaa70e42c0531342
+      # Same hashira tag as the ci job above.
+      - uses: skathio/hashira/.github/actions/pages-upload@v3
         with:
           path: dist
 
@@ -101,6 +102,6 @@ jobs:
       pages: write      # deploy-pages
       id-token: write   # deploy-pages authenticates via OIDC
     steps:
-      # skathio/hashira v3.1.0
+      # Same hashira tag as the ci job above.
       - id: deploy
-        uses: skathio/hashira/.github/actions/pages-deploy@1bd415e21fb070c46f07e05bfaa70e42c0531342
+        uses: skathio/hashira/.github/actions/pages-deploy@v3
