@@ -50,7 +50,9 @@ function fixtureBuild({ runs, mutate } = {}) {
     fs.writeFileSync(fixture, JSON.stringify(data));
   }
   const out = tmp();
-  const res = spawnSync(process.execPath, ['scripts/build.mjs', '--out', out, '--fixture', fixture], { cwd: ROOT, encoding: 'utf8' });
+  // Out of Actions mode, so warnings are plain `warning: <repo>: ...` lines on CI as well as locally.
+  const { GITHUB_ACTIONS, ...env } = process.env;
+  const res = spawnSync(process.execPath, ['scripts/build.mjs', '--out', out, '--fixture', fixture], { cwd: ROOT, env, encoding: 'utf8' });
   assert.equal(res.status, 0, res.stderr);
   const page = (rel) => fs.readFileSync(path.join(out, rel), 'utf8');
   return { out, stderr: res.stderr, home: page('index.html'), prs: page('prs/index.html'), ci: page('ci/index.html') };
