@@ -45,14 +45,14 @@ test('the pull requests page carries the homepage\'s Releases nav link when ther
 test('a PR read handed to writeSite as null or without a list is the could-not-be-read page', () => {
   for (const prs of [null, {}, { pulls: 'x' }, { pulls: undefined, total: 3 }]) {
     const html = prsPage({ prs });
-    assert.match(html, /Pull request status could not be read at 24 Nov 2026, 09:05 UTC\./, JSON.stringify(prs));
+    assert.match(html, /Pull request status could not be read at <time datetime="2026-11-24T09:05:00.000Z" data-local>24 Nov 2026, 09:05 UTC<\/time>\./, JSON.stringify(prs));
     assert.ok(!/<table\b/.test(html));
   }
 });
 
 test('a PR read with no read time falls back to the build time', () => {
   const html = prsPage({ prs: { pulls: [], total: 0 } });
-  assert.match(html, /As of 24 Nov 2026, 09:05 UTC, rebuilt hourly\./);
+  assert.match(html, /As of <time datetime="2026-11-24T09:05:00.000Z" data-local>24 Nov 2026, 09:05 UTC<\/time>, rebuilt hourly\./);
 });
 
 test('collectPulls with no projects, or projects of the wrong type, lists nothing and does not throw', async () => {

@@ -190,6 +190,7 @@ const top = ({ org, title, description, up, hasReleases }) => `<!doctype html>
 <link rel="alternate" type="application/json" href="${up}projects.json" title="Projects feed">
 <style>${CSS}</style>
 <script src="${up}brand/theme.js"></script>
+<script src="${up}brand/local-time.js" defer></script>
 </head>
 <body>
 <nav><a class="brand" href="${up || './'}"><img src="${up}brand/mark.svg" alt=""><span>${orgName(org)}</span></a><a class="nl" href="${up}#projects">Projects</a>${hasReleases ? `<a class="nl" href="${up}#releases">Releases</a>` : ''}<a class="nl keep" href="${up ? './" aria-current="page' : 'prs/'}">Pull requests</a><span class="sp"></span><button type="button" id="theme" hidden>Theme</button></nav>`;
@@ -235,10 +236,13 @@ ${releases}
 const PR_STATUS_CLASS = new Map([['Needs attention', 'bad'], ['Ready to merge', 'ok'], ['Ready for review', 'rev'], ['Waiting', 'wait'], ['No CI', 'none']]);
 const PR_LIMIT = 100;
 
-// "24 Nov 2026, 09:05", in UTC like formatDate.
+// "24 Nov 2026, 09:05 UTC", like formatDate. A static page cannot know the visitor's zone, so
+// brand/local-time.js rewrites it in the browser; without script the UTC time is still correct.
 const formatTime = (iso) => {
   const t = Date.parse(iso ?? '');
-  return Number.isNaN(t) ? 'an unknown time' : `${formatDate(iso)}, ${new Date(t).toISOString().slice(11, 16)}`;
+  return Number.isNaN(t)
+    ? 'an unknown time'
+    : `<time datetime="${esc(new Date(t).toISOString())}" data-local>${esc(formatDate(iso))}, ${new Date(t).toISOString().slice(11, 16)} UTC</time>`;
 };
 
 function prRow(r, names) {
@@ -252,9 +256,9 @@ function prRow(r, names) {
 }
 
 function prBody(pulls, total, readAt, names) {
-  if (!Array.isArray(pulls)) return `<p class="empty">Pull request status could not be read at ${esc(formatTime(readAt))} UTC.</p>`;
+  if (!Array.isArray(pulls)) return `<p class="empty">Pull request status could not be read at ${formatTime(readAt)}.</p>`;
   const rows = pulls.filter((r) => names.has(r?.repo));
-  const asOf = `<p class="note">As of ${esc(formatTime(readAt))} UTC, rebuilt hourly.</p>`;
+  const asOf = `<p class="note">As of ${formatTime(readAt)}, rebuilt hourly.</p>`;
   // Past the limit the note shows even with no row left, so an empty page never reads as complete.
   const more = Number.isSafeInteger(total) && total > PR_LIMIT ? `<p class="note">Showing the first ${PR_LIMIT} of ${total} open pull requests.</p>\n` : '';
   if (!rows.length) return `${asOf}\n${more}<p class="empty">No open pull requests.</p>`;

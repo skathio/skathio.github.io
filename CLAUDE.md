@@ -30,7 +30,7 @@ GH_TOKEN=$(gh auth token) npm run build   # live build from the org; reads the r
 | `src/manifest.mjs` | Manifest schema, `LIMITS`, URL/path checks, image byte checks, `screenSvg`. |
 | `src/render.mjs` | The whole page: HTML, inline `CSS`, light/dark tokens, tiles, hero stats, releases timeline, and the `/prs/` page (`renderPrsPage`). |
 | `src/build.mjs` | `writeSite` (writes `dist/`, refuses reserved paths) and `fixtureClient`. |
-| `brand/` | `mark.svg` (the org mark) and `theme.js` (Auto/Light/Dark toggle, localStorage). Copied into `dist/brand/`. |
+| `brand/` | `mark.svg` (the org mark), `theme.js` (Auto/Light/Dark toggle, localStorage) and `local-time.js` (rewrites a `<time data-local>` UTC time into the visitor's zone; the UTC text stays without script). Copied into `dist/brand/`. |
 | `test/` | `node:test` files, one per `src` module, plus `fixtures/org.json`. |
 | `docs/manifest.md` | The manifest contract for project repos. Keep it in sync with `manifest.mjs`. |
 
