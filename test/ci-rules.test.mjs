@@ -172,10 +172,10 @@ test('.github/ci-rules.json starts with exactly the five repos, each requiring "
   for (const checks of Object.values(config.repos)) assert.deepEqual(checks, [CHECK]);
 });
 
-test('ci.yml points all three hashira refs at the same @v3 tag and keeps the ci job permissions', () => {
+test('ci.yml points all four hashira refs at the same @v3 tag and keeps the ci job permissions', () => {
   const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'ci.yml'), 'utf8');
   const refs = [...yml.matchAll(/skathio\/hashira\/(\S+)@(\S+)/g)];
-  assert.deepEqual(refs.map((m) => m[1]).sort(), ['.github/actions/pages-deploy', '.github/actions/pages-upload', '.github/workflows/static-webapp-ci.yml']);
+  assert.deepEqual(refs.map((m) => m[1]).sort(), ['.github/actions/pages-deploy', '.github/actions/pages-upload', '.github/actions/site-kit', '.github/workflows/static-webapp-ci.yml']);
   for (const m of refs) assert.equal(m[2], 'v3', `${m[1]} is on @${m[2]}, not the shared @v3 tag`);
   assert.ok(!/skathio\/hashira v3\.\d/.test(yml), 'no version comment left from a SHA pin');
   const ciJob = /\n {2}ci:\n([\s\S]*?)\n {2}\S/.exec(yml)[1];

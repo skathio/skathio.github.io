@@ -16,7 +16,8 @@
 # Every trigger but pull_request runs the live build and deploys. hashira's CI job does not
 # run there: it always uploads its fixture build as the Pages artifact, and its reusable
 # workflow takes no secrets, while the live build needs one. The live build is this repo's
-# own `build` job, with hashira's pages-upload and pages-deploy actions.
+# own `build` job, with hashira's site-kit, pages-upload and pages-deploy actions. The fixture
+# build on a pull request has no _kit/, so its <site-nav> stays a plain bar of links.
 #
 # The merge is the approval: main only takes reviewed pull requests (or an owner), so every
 # trigger builds and deploys main with no second, manual approval. The github-pages Environment
@@ -44,8 +45,9 @@ permissions: {}
 jobs:
   ci:
     if: github.event_name == 'pull_request'
-    # The job id `ci` names the required check `ci / passed`; keep it. All three hashira refs
-    # track the moving v3 tag, so v3.x releases apply with no PR here. Move them to v4 together.
+    # The job id `ci` names the required check `ci / passed`; keep it. All four hashira refs
+    # (this one and the build job's three actions) track the moving v3 tag, so v3.x
+    # releases apply with no PR here. Move them to v4 together.
     uses: skathio/hashira/.github/workflows/static-webapp-ci.yml@v3
     permissions:
       contents: read # check out the repository
@@ -80,6 +82,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.HOMEPAGE_READ_TOKEN || github.token }}
         run: npm run build
+      # The kit behind every page's <site-nav> (tokens.css, theme.js, site-nav.js) goes into
+      # dist/_kit/, at the hashira commit the v3 tag resolves to. Same tag as the ci job above.
+      - uses: skathio/hashira/.github/actions/site-kit@v3
+        with:
+          dest: dist
       # Same hashira tag as the ci job above.
       - uses: skathio/hashira/.github/actions/pages-upload@v3
         with:

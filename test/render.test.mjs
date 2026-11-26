@@ -61,7 +61,7 @@ test('the releases timeline is newest first, with dates', () => {
 test('no timeline, and no nav link to it, when nothing has been released', () => {
   const html = renderPage({ org: 'skathio', projects: [base], generatedAt: '' });
   assert.ok(!html.includes('id="releases"'));
-  assert.ok(!html.includes('href="#releases"'));
+  assert.ok(!html.includes('#releases'));
 });
 
 test('a listed private project means the page stops claiming everything is open source', () => {
@@ -85,7 +85,7 @@ test('the hero numbers are counted from the data', () => {
 test('the org name gets its accent and the theme script loads', () => {
   const html = renderPage({ org: 'skathio', projects: [], generatedAt: '' });
   assert.match(html, /skath<span class="io">io<\/span>/);
-  assert.match(html, /<script src="brand\/theme\.js"><\/script>/);
+  assert.match(html, /<script src="_kit\/theme\.js"><\/script>/);
 });
 
 test('the page has a dark mode, a viewport and the feed link', () => {

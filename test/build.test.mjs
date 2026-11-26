@@ -28,6 +28,15 @@ test('a repo named like a homepage path is refused, even when it is not listed',
   assert.throws(() => writeSite({ out: tmp(), org: 'skathio', projects: [], repoNames: ['Brand'], images: new Map(), generatedAt: '' }), /brand/i);
 });
 
+// site-kit adds _kit/ after the build and refuses to write over one, so the build leaves it out,
+// and a repo named _kit would be hidden behind it like any other homepage path.
+test('the build writes no _kit/, and a repo named _kit is refused', () => {
+  const out = tmp();
+  writeSite({ out, org: 'skathio', projects: [p('somi')], images: new Map(), generatedAt: '' });
+  assert.ok(!fs.existsSync(path.join(out, '_kit')));
+  assert.throws(() => writeSite({ out: tmp(), org: 'skathio', projects: [], repoNames: ['_KIT'], images: new Map(), generatedAt: '' }), /"_kit"/);
+});
+
 test('the source tree has no top-level folder named after a project repo', () => {
   const root = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
   const names = ['somi', 'rogue', 'hinokami', 'maneki', 'hashira', 'maneki-data', 'stonks', 'stonks-data', 'raven-js', 'ripper-js', 'jutsu-js', 'arise-js', 'arise-net', 'rogue-js'];

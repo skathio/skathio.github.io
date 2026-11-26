@@ -1,6 +1,7 @@
 // Builds the site into a directory: index.html, projects.json (the feed), tiles/ (each project's
 // branding image), brand/ (the org's own mark), prs/ (the open pull requests page) and ci/ (the
-// unresolved workflow failures).
+// unresolved workflow failures). The deploy adds _kit/ (hashira's site kit) after this build, so
+// this build never writes it, and a repo named _kit is refused like the other paths.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -15,7 +16,7 @@ const BRAND = path.join(path.dirname(new URL(import.meta.url).pathname), '..', '
 export function writeSite({ out, org, projects, images, generatedAt, repoNames = [], prs, runs }) {
   // A top-level entry named like any repo, listed or not, would hide its Pages site at /<repo>/.
   const reserved = new Set([...repoNames, ...projects.map((p) => p.repo)].map((n) => n.toLowerCase()));
-  for (const entry of ['index.html', 'projects.json', 'tiles', 'brand', 'prs', 'ci', '.nojekyll']) {
+  for (const entry of ['index.html', 'projects.json', 'tiles', 'brand', 'prs', 'ci', '_kit', '.nojekyll']) {
     if (reserved.has(entry.toLowerCase())) throw new Error(`a repo is named "${entry}", which the homepage needs as a path`);
   }
 
