@@ -13,6 +13,16 @@ mkdir -p "$out"
 cd "$root"
 npm run --silent build:fixture
 
+# The deploy's site-kit step copies hashira's kit into dist/_kit/; the fixture build does not, so
+# copy the same files here from a local hashira clone, at the v3 tag the deploy uses. Without them
+# the <site-nav> never renders and the shots would not show the real nav.
+hashira="${HASHIRA_DIR:-$root/../hashira}"
+mkdir dist/_kit
+for f in tokens.css theme.js site-nav.js; do
+  git -C "$hashira" show "v3:.github/actions/site-kit/kit/$f" > "dist/_kit/$f" \
+    || { echo "no hashira clone with a v3 tag at $hashira (set HASHIRA_DIR)" >&2; exit 1; }
+done
+
 # A free port, so another server already on a common port is never screenshotted by mistake.
 port="$(python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1])')"
 python3 -m http.server "$port" --bind 127.0.0.1 -d dist >"$out/server.log" 2>&1 &
@@ -27,8 +37,9 @@ done
 # Fail closed: refuse to screenshot anything that is not this site.
 curl -sf "$url" | grep -q '<title>skathio</title>' || { echo "the homepage is not being served at $url" >&2; exit 1; }
 
+# The short wait lets the kit define <site-nav> first; without it the full-page capture can fail.
 for scheme in light dark; do
-  npx -y "$pw" screenshot --color-scheme "$scheme" --viewport-size 390,844 --full-page "$url" "$out/phone-$scheme.png" >/dev/null
-  npx -y "$pw" screenshot --color-scheme "$scheme" --viewport-size 1440,900 --full-page "$url" "$out/desktop-$scheme.png" >/dev/null
+  npx -y "$pw" screenshot --wait-for-timeout 1500 --color-scheme "$scheme" --viewport-size 390,844 --full-page "$url" "$out/phone-$scheme.png" >/dev/null
+  npx -y "$pw" screenshot --wait-for-timeout 1500 --color-scheme "$scheme" --viewport-size 1280,800 --full-page "$url" "$out/desktop-$scheme.png" >/dev/null
 done
 ls -1 "$out"/*.png

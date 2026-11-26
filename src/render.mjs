@@ -101,13 +101,19 @@ body{margin:0;background:var(--canvas);color:var(--ink);font:16px/1.6 var(--sans
 a{color:inherit;text-decoration:none}
 a:hover{text-decoration:underline}
 ul,ol{list-style:none;margin:0;padding:0}
-nav{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:24px;padding:10px 18px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--canvas) 88%,transparent);backdrop-filter:blur(8px);font-size:.93rem}
-nav .brand{display:flex;gap:8px;align-items:center;font-weight:800}
-nav .brand img{width:26px;height:26px}
+/* The nav is hashira's site-nav element (from /_kit/). Until it is defined, or with no kit in a fixture
+   build, its light-DOM links still lay out as a bar. The extras it slots in are page links. */
+site-nav:not(:defined){display:flex;align-items:center;gap:16px;min-height:50px;padding:12px 18px;border-bottom:1px solid var(--line)}
+site-nav>a{color:var(--muted);white-space:nowrap}
+site-nav>a:hover{color:var(--accent);text-decoration:none}
+/* The kit's focus ring lives in its shadow root and does not reach these light-DOM links. */
+site-nav>a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* The .fb links stand in for the kit's brand, Projects and Releases while it is not defined
+   (no script, the kit failed to load, or a fixture build): once it is, the kit draws them. */
+site-nav>a.fb.brand{display:flex;gap:8px;align-items:center;color:var(--ink);font-weight:800}
+site-nav>a.fb.brand img{width:26px;height:26px}
+site-nav:defined>a.fb{display:none}
 .io{color:var(--accent)}
-nav .nl{color:var(--muted)}
-nav .sp{flex:1}
-nav button{font:inherit;color:var(--ink);background:none;border:1px solid var(--line);border-radius:8px;padding:4px 12px;cursor:pointer}
 .wrap{max-width:1140px;margin:0 auto;padding:0 40px}
 .hero{display:grid;grid-template-columns:1fr 260px;gap:40px;align-items:center;padding:88px 0 64px}
 .eyebrow{margin:0;color:var(--accent);font-size:.75rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
@@ -167,7 +173,7 @@ footer a{text-decoration:underline}
 /* At phone width each pull request stacks into its own block, so nothing hides off to the side. */
 @media (max-width:760px){.prs thead{display:none}.prs,.prs tbody,.prs tr,.prs td{display:block}.prs tr{padding:10px 0;border-bottom:1px solid var(--line)}.prs tr:last-child{border-bottom:0}.prs td{border:0;padding:3px 14px}.prs td.pr{min-width:0}.prs td[data-label]::before{content:attr(data-label) ": ";color:var(--muted);font-size:.85rem}}
 @media (max-width:900px){.grid{grid-template-columns:1fr 1fr}}
-@media (max-width:760px){.wrap{padding:0 16px}.hero{grid-template-columns:1fr;padding:48px 0 40px}.emblem{width:150px;height:150px;order:-1}h1{font-size:2.6rem}.stats{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}nav .nl:not(.keep){display:none}nav{gap:14px}section{padding:56px 0}}
+@media (max-width:760px){site-nav>a.fb.nl{display:none}.wrap{padding:0 16px}.hero{grid-template-columns:1fr;padding:48px 0 40px}.emblem{width:150px;height:150px;order:-1}h1{font-size:2.6rem}.stats{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}section{padding:56px 0}}
 `;
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -176,9 +182,16 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const orgName = (org) => esc(org).replace(/io$/, '<span class="io">io</span>');
 
 // The head and nav every page shares. `up` is the path back to the site root: '' on the homepage
-// and '../' on /prs/ and /ci/, whose own nav link `current` marks as the page you are on. Both
-// links are `keep`: they stay in the nav at phone width.
-export const top = ({ org, title, description, up, hasReleases, current = null }) => `<!doctype html>
+// and '../' on /prs/ and /ci/. The nav is hashira's <site-nav>, loaded from /_kit/ (site-kit copies
+// it there at deploy). Projects and Releases are its `nav` items, which the kit hides at phone
+// width like every site's section links. Pull requests and CI are its extras, links in the page's
+// own DOM: they stay visible at phone width and carry aria-current on their own page.
+export const top = ({ org, title, description, up, hasReleases, current = null }) => {
+  const nav = [{ label: 'Projects', href: `${up}#projects` }, ...(hasReleases ? [{ label: 'Releases', href: `${up}#releases` }] : [])];
+  // The items in the kit's JSON form. `<` is escaped so no value can close the script.
+  const navJson = JSON.stringify({ nav }).replace(/</g, '\\u003c');
+  const here = ' aria-current="page"';
+  return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -189,12 +202,15 @@ export const top = ({ org, title, description, up, hasReleases, current = null }
 <meta name="theme-color" content="#f7f6f2" media="(prefers-color-scheme: light)">
 <link rel="icon" href="${up}brand/mark.svg" type="image/svg+xml">
 <link rel="alternate" type="application/json" href="${up}projects.json" title="Projects feed">
+<link rel="stylesheet" href="${up}_kit/tokens.css">
 <style>${CSS}</style>
-<script src="${up}brand/theme.js"></script>
+<script src="${up}_kit/theme.js"></script>
+<script src="${up}_kit/site-nav.js" defer></script>
 <script src="${up}brand/local-time.js" defer></script>
 </head>
 <body>
-<nav><a class="brand" href="${up || './'}"><img src="${up}brand/mark.svg" alt=""><span>${orgName(org)}</span></a><a class="nl" href="${up}#projects">Projects</a>${hasReleases ? `<a class="nl" href="${up}#releases">Releases</a>` : ''}<a class="nl keep" href="${current === 'prs' ? './" aria-current="page' : `${up}prs/`}">Pull requests</a><a class="nl keep" href="${current === 'ci' ? './" aria-current="page' : `${up}ci/`}">CI</a><span class="sp"></span><button type="button" id="theme" hidden>Theme</button></nav>`;
+<site-nav name="${esc(org)}" logo="${up}brand/mark.svg" root="${up || './'}"><script type="application/json">${navJson}</script><a class="fb brand" href="${up || './'}"><img src="${up}brand/mark.svg" alt=""><span>${orgName(org)}</span></a>${nav.map((i) => `<a class="fb nl" href="${i.href}">${i.label}</a>`).join('')}<a href="${up}prs/"${current === 'prs' ? here : ''}>Pull requests</a><a href="${up}ci/"${current === 'ci' ? here : ''}>CI</a></site-nav>`;
+};
 
 export function renderPage({ org, projects, generatedAt }) {
   const s = summarise(projects);

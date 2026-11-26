@@ -17,7 +17,7 @@ const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'homepage-ci-'));
 
 const text = (html) => html.replace(/<style[\s\S]*?<\/style>/g, '').replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]*>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 const bodyRows = (html) => (html.match(/<tr\b[\s\S]*?<\/tr>/g) ?? []).filter((r) => !/<th\b/.test(r));
-const navOf = (html) => /<nav\b[\s\S]*?<\/nav>/.exec(html)?.[0] ?? '';
+const navOf = (html) => /<site-nav\b[\s\S]*?<\/site-nav>/.exec(html)?.[0] ?? '';
 const anchors = (html) => [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)].map((m) => ({ attrs: m[1], text: text(m[2]) }));
 const attr = (attrs, name) => new RegExp(`\\b${name}="([^"]*)"`).exec(attrs)?.[1] ?? null;
 const hrefs = (html) => anchors(html).map((a) => attr(a.attrs, 'href'));
@@ -63,7 +63,8 @@ const plainBuild = () => (plain ??= fixtureBuild());
 const allGreen = (repos = ['somi', 'hinokami', 'rogue']) => Object.fromEntries(repos.map((r) => [r, [run(r, { conclusion: 'success' })]]));
 
 // Whether a nav link stays on screen at phone width (390px): no display:none rule in a
-// max-width media query that covers 390px picks it out of the nav by tag and classes.
+// max-width media query that covers 390px picks it out of the nav by tag and classes. The kit
+// hides its own `.link` items in its shadow root; the page's links in its extras slot are not those.
 const phoneMedia = (css) => [...css.matchAll(/@media\s*\(max-width:\s*(\d+)px\)\s*\{((?:[^{}]*\{[^{}]*\})*)\s*\}/g)]
   .filter((m) => Number(m[1]) >= 390).map((m) => m[2]);
 const hidingSelectors = (block) => [...block.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
@@ -79,7 +80,7 @@ function compoundMatches(compound, classes) {
 function visibleOnPhone(html, link) {
   const css = /<style>([\s\S]*?)<\/style>/.exec(html)?.[1] ?? '';
   const classes = new Set((attr(link.attrs, 'class') ?? '').split(/\s+/).filter(Boolean));
-  const hides = (parts) => parts[0] === 'nav' && parts.length > 1 && compoundMatches(parts[parts.length - 1], classes);
+  const hides = (parts) => /^(site-)?nav\b/.test(parts[0]) && parts.length > 1 && compoundMatches(parts[parts.length - 1], classes);
   return !phoneMedia(css).flatMap(hidingSelectors).some(hides);
 }
 
@@ -126,11 +127,12 @@ test('aria-current="page" marks the page you are on, and only that link', () => 
   assert.deepEqual(current(pages.home), []);
 });
 
-test('the CI page has the nav back home, the theme toggle, both themes and the local-time script', () => {
+test('the CI page has the nav back home, the kit theme script, both themes and the local-time script', () => {
   const { ci } = plainBuild();
-  assert.ok(hrefs(navOf(ci)).some((h) => ['../', '..', '../index.html'].includes(h)), navOf(ci));
-  assert.match(navOf(ci), /<button\b[^>]*id="theme"/);
-  assert.match(ci, /<script src="\.\.\/brand\/theme\.js"><\/script>/);
+  // The kit renders the brand link home from `root`, and the theme toggle, in the <site-nav>.
+  assert.match(navOf(ci), /^<site-nav\b[^>]*\broot="\.\.\/"/);
+  assert.match(ci, /<script src="\.\.\/_kit\/theme\.js"><\/script>/);
+  assert.ok(!ci.includes('brand/theme.js'), 'one theme script: the kit\'s');
   assert.match(ci, /<script src="\.\.\/brand\/local-time\.js" defer><\/script>/);
   assert.match(ci, /name="viewport"/);
   assert.match(ci, /prefers-color-scheme:\s*dark/);

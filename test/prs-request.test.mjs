@@ -19,7 +19,8 @@ function prsPage(args) {
   writeSite({ out, org: 'skathio', projects: [project('somi')], images: new Map(), generatedAt: READ_AT, ...args });
   return fs.readFileSync(path.join(out, 'prs', 'index.html'), 'utf8');
 }
-const navOf = (html) => /<nav\b[\s\S]*?<\/nav>/.exec(html)?.[0] ?? '';
+const navOf = (html) => /<site-nav\b[\s\S]*?<\/site-nav>/.exec(html)?.[0] ?? '';
+const navItems = (html) => JSON.parse(/<script type="application\/json">([\s\S]*?)<\/script>/.exec(navOf(html))?.[1] ?? '{}').nav ?? [];
 
 const node = (fields = {}) => ({
   repository: { name: 'somi', isPrivate: false }, number: 1, title: 'Bump x', url: 'https://github.com/skathio/somi/pull/1',
@@ -37,9 +38,9 @@ test('past 100 open PRs the note shows even when none of the first 100 is in a l
 
 test('the pull requests page carries the homepage\'s Releases nav link when there are releases', () => {
   const html = prsPage({ projects: [project('somi'), released], prs: { pulls: [], total: 0, readAt: READ_AT } });
-  assert.match(navOf(html), /<a class="nl" href="\.\.\/#projects">Projects<\/a><a class="nl" href="\.\.\/#releases">Releases<\/a>/);
+  assert.deepEqual(navItems(html), [{ label: 'Projects', href: '../#projects' }, { label: 'Releases', href: '../#releases' }]);
   const none = prsPage({ prs: { pulls: [], total: 0, readAt: READ_AT } });
-  assert.ok(!navOf(none).includes('#releases'));
+  assert.deepEqual(navItems(none), [{ label: 'Projects', href: '../#projects' }]);
 });
 
 test('a PR read handed to writeSite as null or without a list is the could-not-be-read page', () => {

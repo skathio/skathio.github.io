@@ -188,16 +188,16 @@ test('past 100 open PRs the page says it shows the first 100 of n', () => {
 
 test('the homepage nav links to the pull requests page', () => {
   const { home } = build({ pulls: [] });
-  const nav = /<nav\b[\s\S]*?<\/nav>/.exec(home)?.[0] ?? '';
+  const nav = /<site-nav\b[\s\S]*?<\/site-nav>/.exec(home)?.[0] ?? '';
   assert.equal(linkText(nav, 'prs/'), 'Pull requests');
 });
 
-test('the pull requests page has the nav back to the homepage and the theme toggle', () => {
+test('the pull requests page has the nav back to the homepage and the kit theme script', () => {
   const { prs } = build({ pulls: [] });
-  const nav = /<nav\b[\s\S]*?<\/nav>/.exec(prs)?.[0] ?? '';
-  assert.ok(/<a\b[^>]*href="(\.\.\/|\.\.|\.\.\/index\.html|\/)"/.test(nav), `a link back home in: ${nav}`);
-  assert.match(nav, /<button\b[^>]*id="theme"/);
-  assert.match(prs, /<script src="\.\.\/brand\/theme\.js"><\/script>/);
+  const nav = /<site-nav\b[\s\S]*?<\/site-nav>/.exec(prs)?.[0] ?? '';
+  // The kit renders the brand link home from `root`, and the theme toggle, in the <site-nav>.
+  assert.match(nav, /^<site-nav\b[^>]*\broot="\.\.\/"/);
+  assert.match(prs, /<script src="\.\.\/_kit\/theme\.js"><\/script>/);
 });
 
 test('the pull requests page has light and dark themes and a viewport for phones', () => {

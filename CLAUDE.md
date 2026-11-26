@@ -36,13 +36,20 @@ GH_TOKEN=$(gh auth token) node scripts/ci-rules.mjs [--apply]   # ci-required ru
 | `src/render.mjs` | The whole page: HTML, inline `CSS`, light/dark tokens, tiles, hero stats, releases timeline, and the `/prs/` page (`renderPrsPage`). |
 | `src/ci-page.mjs` | The `/ci/` page (`renderCiPage`), on `render.mjs`'s head, nav and CSS. Re-checks each row's repo and run URL. |
 | `src/build.mjs` | `writeSite` (writes `dist/`, refuses reserved paths) and `fixtureClient`. |
-| `brand/` | `mark.svg` (the org mark), `theme.js` (Auto/Light/Dark toggle, localStorage) and `local-time.js` (rewrites a `<time data-local>` UTC time into the visitor's zone; the UTC text stays without script). Copied into `dist/brand/`. |
+| `brand/` | `mark.svg` (the org mark) and `local-time.js` (rewrites a `<time data-local>` UTC time into the visitor's zone; the UTC text stays without script). Copied into `dist/brand/`. |
 | `test/` | `node:test` files, one per `src` module, plus `fixtures/org.json`. |
 | `docs/manifest.md` | The manifest contract for project repos. Keep it in sync with `manifest.mjs`. |
 
 Output in `dist/`: `index.html`, `projects.json` (the public feed), `tiles/<repo>.<ext>`,
 `brand/`, `prs/index.html` (open pull requests), `ci/index.html` (unresolved CI failures),
-`.nojekyll`.
+`.nojekyll`. The deploy adds `_kit/` (hashira's site kit) after the build.
+
+The nav on every page is hashira's `<site-nav>` (`top()` in `render.mjs`), loaded from `/_kit/`
+with the kit's `theme.js` and `tokens.css`; this site's own tokens and accent override the kit's.
+Projects and Releases are its `nav` JSON items (hidden at phone width by the kit). Pull requests
+and CI are links in its extras slot, so they stay at phone width and carry `aria-current`. No Docs
+link. Plain `.fb` links stand in for the brand, Projects and Releases until the kit defines
+`<site-nav>`, so a page without script, or a fixture build (no `_kit/`), still has a full row of links.
 
 ## Security model (do not weaken)
 
@@ -63,7 +70,8 @@ value (`esc`, `isHexColour`, `httpsUrl`, `tilePath`). Keep both layers.
 
 - **Reserved paths.** Project sites are served at `/<repo>/` from their own repos. This site
   must never publish a top-level path named like a repo. `writeSite` throws if a repo is named
-  `index.html`, `projects.json`, `tiles`, `brand`, `prs`, `ci` or `.nojekyll`. When the org gets a new repo,
+  `index.html`, `projects.json`, `tiles`, `brand`, `prs`, `ci`, `_kit` or `.nojekyll`. `_kit/` is
+  added by the deploy's `site-kit` step, so the build never writes it. When the org gets a new repo,
   add its name to the list in `test/build.test.mjs` ("the source tree has no top-level folder
   named after a project repo"). Never add a top-level folder here named after a repo.
 - **CSS lives in a JS template string** (`CSS` in `render.mjs`). Dark tokens are the `DARK`
@@ -84,7 +92,7 @@ This repo renders a website. **Every change that can affect what renders** (`src
 check before the PR:
 
 1. `npm run build:fixture`, then serve `dist/` and take screenshots at **phone (390×844)** and
-   **desktop (1440×900)** widths, in **light and dark** mode: four full-page shots.
+   **desktop (1280×800)** widths, in **light and dark** mode: four full-page shots.
 2. Look at each screenshot yourself: layout, overflow at phone width, contrast in both themes,
    the theme button, the tiles and the releases timeline.
 3. Show the screenshots in the PR, or describe what each one shows and what you checked.
@@ -101,13 +109,14 @@ cannot affect the page (CI, docs, tests only) do not need it. Say so in the PR.
   (`npm run build:fixture`, offline). A PR never reaches the org.
 - On push to `main`, hourly (`17 * * * *`), on `repository_dispatch` (`project-released`,
   `project-updated`) and by hand, `ci` is skipped and this repo's own `build` and `deploy` jobs
-  run instead: `npm test`, a live build with `HOMEPAGE_READ_TOKEN` (or the job token), then a
-  deploy to GitHub Pages through hashira's pages-upload and pages-deploy actions. hashira's CI
+  run instead: `npm test`, a live build with `HOMEPAGE_READ_TOKEN` (or the job token), then
+  hashira's `site-kit` copies the kit into `dist/_kit/`, then a deploy to GitHub Pages through
+  hashira's pages-upload and pages-deploy actions. hashira's CI
   cannot do this build: it takes no secrets and would upload the fixture build. **The merge is
   the approval**: there is no manual gate. Merging to `main` publishes.
 - There is no release or versioning. A deploy is the release.
-- All three `skathio/hashira` refs in `ci.yml` (the reusable workflow, `pages-upload` and
-  `pages-deploy`) track the moving `@v3` tag, so new v3.x releases apply with no PR here. Keep
+- All four `skathio/hashira` refs in `ci.yml` (the reusable workflow, `site-kit`, `pages-upload`
+  and `pages-deploy`) track the moving `@v3` tag, so new v3.x releases apply with no PR here. Keep
   them on the same ref and move them together to `@v4` when that ships
   (`grep -rn hashira .github/workflows`). A test asserts they agree. There is no `library_ref`:
   hashira checks its actions out at the commit the tag resolves to.
