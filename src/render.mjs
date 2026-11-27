@@ -90,10 +90,11 @@ export function timeline(projects) {
 <ol class="tl">${rows.map(item).join('')}</ol></section>`;
 }
 
-const DARK = '--canvas:#101216;--surface:#171a20;--line:#2b3039;--ink:#e8e9ec;--muted:#a0a6b1;--accent:#ff4d4d;--code:#1f232b;--glow:rgba(255,40,40,.45);--ok:#5cc98a;--wait:#e2b04a;--info:#7fb0ff;color-scheme:dark';
+// Only this site's own tokens: the palette, type and colour-scheme come from the kit's tokens.css,
+// loaded first, and the kit derives --accent from --site-accent and --site-accent-dark.
+const DARK = '--glow:rgba(255,40,40,.45);--ok:#5cc98a;--wait:#e2b04a;--info:#7fb0ff';
 const CSS = `
-:root{--canvas:#f7f6f2;--surface:#fff;--line:#dedbd2;--ink:#1b1d22;--muted:#5b606b;--accent:#b80f0f;--code:#efece4;--glow:rgba(184,15,15,.22);--ok:#1d7a45;--wait:#8a5a00;--info:#1f5fbf;
---sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;color-scheme:light}
+:root{--site-accent:#b80f0f;--site-accent-dark:#ff4d4d;--glow:rgba(184,15,15,.22);--ok:#1d7a45;--wait:#8a5a00;--info:#1f5fbf}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){${DARK}}}
 :root[data-theme=dark]{${DARK}}
 *{box-sizing:border-box}
@@ -101,18 +102,16 @@ body{margin:0;background:var(--canvas);color:var(--ink);font:16px/1.6 var(--sans
 a{color:inherit;text-decoration:none}
 a:hover{text-decoration:underline}
 ul,ol{list-style:none;margin:0;padding:0}
-/* The nav is hashira's site-nav element (from /_kit/). Until it is defined, or with no kit in a fixture
-   build, its light-DOM links still lay out as a bar. The extras it slots in are page links. */
-site-nav:not(:defined){display:flex;align-items:center;gap:16px;min-height:50px;padding:12px 18px;border-bottom:1px solid var(--line)}
-site-nav>a{color:var(--muted);white-space:nowrap}
+/* The kit's tokens.css holds the undefined site-nav's box, and its slotted links get the kit's
+   colour, hover and focus. These rules lay out the slot="fallback" links, shown only until the kit
+   is ready (no script, or the kit failed to load); the brand span waits for the kit's brand link. */
+/* The page's own a{color:inherit} outranks the kit's ::slotted(a) colour, so the links state it again. */
+site-nav>a{color:var(--muted)}
 site-nav>a:hover{color:var(--accent);text-decoration:none}
-/* The kit's focus ring lives in its shadow root and does not reach these light-DOM links. */
-site-nav>a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-/* The .fb links stand in for the kit's brand, Projects and Releases while it is not defined
-   (no script, the kit failed to load, or a fixture build): once it is, the kit draws them. */
-site-nav>a.fb.brand{display:flex;gap:8px;align-items:center;color:var(--ink);font-weight:800}
-site-nav>a.fb.brand img{width:26px;height:26px}
-site-nav:defined>a.fb{display:none}
+site-nav:not([ready])>a{margin-right:16px;white-space:nowrap}
+site-nav:not([ready])>[slot=brand]{display:none}
+site-nav>a.brand{display:inline-flex;gap:8px;align-items:center;vertical-align:middle;color:var(--ink);font-weight:800}
+site-nav>[slot=brand]{display:flex;gap:8px;align-items:center}
 .io{color:var(--accent)}
 .wrap{max-width:1140px;margin:0 auto;padding:0 40px}
 .hero{display:grid;grid-template-columns:1fr 260px;gap:40px;align-items:center;padding:88px 0 64px}
@@ -147,8 +146,8 @@ h2{font-size:2.1rem;letter-spacing:-.02em;margin:6px 0 10px}
 .links{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:6px 18px;font-weight:700;font-size:.9rem}
 .links a{color:var(--cc)}
 .card h3 a{position:relative;z-index:1}
-.tl{padding-left:26px;border-left:1px solid var(--line)}
-.tl li{position:relative;padding:0 0 26px}
+.tl{padding-left:1.625rem;border-left:1px solid var(--line)}
+.tl li{position:relative;padding:0 0 1.625rem}
 .dot{position:absolute;left:-32px;top:7px;width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
 .tl code{font:700 .95rem var(--mono)}
 .tl time{color:var(--muted);font-size:.85rem;margin:0 8px}
@@ -173,7 +172,7 @@ footer a{text-decoration:underline}
 /* At phone width each pull request stacks into its own block, so nothing hides off to the side. */
 @media (max-width:760px){.prs thead{display:none}.prs,.prs tbody,.prs tr,.prs td{display:block}.prs tr{padding:10px 0;border-bottom:1px solid var(--line)}.prs tr:last-child{border-bottom:0}.prs td{border:0;padding:3px 14px}.prs td.pr{min-width:0}.prs td[data-label]::before{content:attr(data-label) ": ";color:var(--muted);font-size:.85rem}}
 @media (max-width:900px){.grid{grid-template-columns:1fr 1fr}}
-@media (max-width:760px){site-nav>a.fb.nl{display:none}.wrap{padding:0 16px}.hero{grid-template-columns:1fr;padding:48px 0 40px}.emblem{width:150px;height:150px;order:-1}h1{font-size:2.6rem}.stats{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}section{padding:56px 0}}
+@media (max-width:760px){site-nav>a.nl{display:none}.wrap{padding:0 16px}.hero{grid-template-columns:1fr;padding:48px 0 40px}.emblem{width:150px;height:150px;order:-1}h1{font-size:2.6rem}.stats{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}section{padding:56px 0}}
 `;
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -191,6 +190,8 @@ export const top = ({ org, title, description, up, hasReleases, current = null }
   // The items in the kit's JSON form. `<` is escaped so no value can close the script.
   const navJson = JSON.stringify({ nav }).replace(/</g, '\\u003c');
   const here = ' aria-current="page"';
+  // At the kit's 24px, so the brand does not change size when the kit takes over.
+  const mark = `<img src="${up}brand/mark.svg" alt="" width="24" height="24">`;
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -209,7 +210,7 @@ export const top = ({ org, title, description, up, hasReleases, current = null }
 <script src="${up}brand/local-time.js" defer></script>
 </head>
 <body>
-<site-nav name="${esc(org)}" logo="${up}brand/mark.svg" root="${up || './'}"><script type="application/json">${navJson}</script><a class="fb brand" href="${up || './'}"><img src="${up}brand/mark.svg" alt=""><span>${orgName(org)}</span></a>${nav.map((i) => `<a class="fb nl" href="${i.href}">${i.label}</a>`).join('')}<a href="${up}prs/"${current === 'prs' ? here : ''}>Pull requests</a><a href="${up}ci/"${current === 'ci' ? here : ''}>CI</a></site-nav>`;
+<site-nav role="navigation" aria-label="Site" name="${esc(org)}" logo="${up}brand/mark.svg" root="${up || './'}"><span slot="brand">${mark}<span>${orgName(org)}</span></span><script type="application/json">${navJson}</script><a slot="fallback" class="brand" href="${up || './'}">${mark}<span>${orgName(org)}</span></a>${nav.map((i) => `<a slot="fallback" class="nl" href="${i.href}">${i.label}</a>`).join('')}<a href="${up}prs/"${current === 'prs' ? here : ''}>Pull requests</a><a href="${up}ci/"${current === 'ci' ? here : ''}>CI</a></site-nav>`;
 };
 
 export function renderPage({ org, projects, generatedAt }) {

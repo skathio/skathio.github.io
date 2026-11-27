@@ -16,8 +16,8 @@
 # Every trigger but pull_request runs the live build and deploys. hashira's CI job does not
 # run there: it always uploads its fixture build as the Pages artifact, and its reusable
 # workflow takes no secrets, while the live build needs one. The live build is this repo's
-# own `build` job, with hashira's site-kit, pages-upload and pages-deploy actions. The fixture
-# build on a pull request has no _kit/, so its <site-nav> stays a plain bar of links.
+# own `build` job, with hashira's site-kit, pages-upload and pages-deploy actions. The PR's
+# fixture build gets the same kit (site_kit), and its job holds no Pages or OIDC grant.
 #
 # The merge is the approval: main only takes reviewed pull requests (or an owner), so every
 # trigger builds and deploys main with no second, manual approval. The github-pages Environment
@@ -51,14 +51,14 @@ jobs:
     uses: skathio/hashira/.github/workflows/static-webapp-ci.yml@v3
     permissions:
       contents: read # check out the repository
-      id-token: write # upload-pages-artifact authenticates to Pages
-      pages: write # upload-pages-artifact stores the site for deploy
       pull-requests: write # the passed job keeps one CI summary comment on the pull request
       security-events: write # upload CodeQL results when CodeQL is enabled
     with:
       node_version: '24'
       build_command: 'npm run build:fixture'
       output_dir: 'dist'
+      # The kit goes into the PR's artifact too, so it renders the nav the deploy serves.
+      site_kit: true
 
   build:
     if: github.event_name != 'pull_request'

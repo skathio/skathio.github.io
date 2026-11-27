@@ -46,10 +46,13 @@ Output in `dist/`: `index.html`, `projects.json` (the public feed), `tiles/<repo
 
 The nav on every page is hashira's `<site-nav>` (`top()` in `render.mjs`), loaded from `/_kit/`
 with the kit's `theme.js` and `tokens.css`; this site's own tokens and accent override the kit's.
-Projects and Releases are its `nav` JSON items (hidden at phone width by the kit). Pull requests
-and CI are links in its extras slot, so they stay at phone width and carry `aria-current`. No Docs
-link. Plain `.fb` links stand in for the brand, Projects and Releases until the kit defines
-`<site-nav>`, so a page without script, or a fixture build (no `_kit/`), still has a full row of links.
+It is `role="navigation" aria-label="Site"`, so the landmark is there without script. Projects and
+Releases are its `nav` JSON items (behind the kit's menu at phone width). Pull requests and CI are
+links in its extras slot, so they stay at phone width and carry `aria-current`. No Docs link. A
+`<span slot="brand">` gives the kit the styled "skath*io*". `<a slot="fallback">` links stand in for
+the brand, Projects and Releases until the kit is ready, so a page without script still has a full
+row of links. The palette and type come from the kit's `tokens.css`; the page sets only
+`--site-accent`/`--site-accent-dark` and its own tokens, so a build with no `_kit/` is unstyled.
 
 ## Security model (do not weaken)
 
@@ -74,8 +77,8 @@ value (`esc`, `isHexColour`, `httpsUrl`, `tilePath`). Keep both layers.
   added by the deploy's `site-kit` step, so the build never writes it. When the org gets a new repo,
   add its name to the list in `test/build.test.mjs` ("the source tree has no top-level folder
   named after a project repo"). Never add a top-level folder here named after a repo.
-- **CSS lives in a JS template string** (`CSS` in `render.mjs`). Dark tokens are the `DARK`
-  string, applied under `prefers-color-scheme: dark` unless `data-theme=light`, and under
+- **CSS lives in a JS template string** (`CSS` in `render.mjs`). Dark tokens (this site's own,
+  not the kit's palette) are the `DARK` string, applied under `prefers-color-scheme: dark` unless `data-theme=light`, and under
   `data-theme=dark`. Change both themes together.
 - **Tests assert on HTML substrings** in `test/render.test.mjs`. Change copy or markup and those
   tests must change with it.
