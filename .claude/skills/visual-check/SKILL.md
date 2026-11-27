@@ -17,16 +17,18 @@ Use your scratchpad or another temp directory for `<output-dir>`, never a path i
 The script:
 
 - runs `npm run build:fixture` (offline, from `test/fixtures/org.json`) into `dist/`;
-- copies hashira's site kit (`tokens.css`, `theme.js`, `site-nav.js`) at its `v3` tag into
-  `dist/_kit/`, as the deploy's `site-kit@v3` step does, from the clone at `$HASHIRA_DIR`
-  (default `../hashira`). It stops if there is none: without the kit the nav does not render;
+- fetches hashira's tags (forced, as `v3` moves) into the clone at `$HASHIRA_DIR` (default
+  `../hashira`), then copies its site kit (`tokens.css`, `theme.js`, `site-nav.js`) at the `v3`
+  tag into `dist/_kit/`, as the deploy's `site-kit@v3` step does. It stops if there is no clone
+  or the fetch fails: without the current kit the nav does not render as deployed;
 - serves `dist/` with `python3 -m http.server` on a **free** port bound to 127.0.0.1. It picks a
   free port because a common port like 4173 may already serve something else on this machine. It
   then checks that the page's `<title>` is `skathio` before taking any screenshot;
 - takes four full-page PNGs with `npx -y playwright@1.61.1 screenshot`:
   `phone-light.png`, `phone-dark.png` (390×844) and `desktop-light.png`, `desktop-dark.png`
-  (1280×800). Dark mode comes from `--color-scheme dark`, which drives the page's
-  `prefers-color-scheme` tokens;
+  (1280×800). Each waits for `site-nav[ready]` (the kit sets `ready` after its first render)
+  rather than a fixed timeout. Dark mode comes from `--color-scheme dark`, which drives the
+  page's `prefers-color-scheme` tokens;
 - stops the server on exit.
 
 Requirements: Node 22+, python3, curl and network access for npx. Playwright is **not** a repo
@@ -42,11 +44,12 @@ button (Auto → Light → Dark) in the nav, which the CLI shots cannot click.
 
 Open each PNG with the Read tool and check:
 
-- **Nav:** hashira's `<site-nav>`: the mark and name, Projects and Releases (desktop only),
+- **Nav:** hashira's `<site-nav>`: the mark and the name with its accented "io" (the
+  `slot="brand"` span), Projects and Releases (behind the kit's Menu button at phone width),
   Pull requests and CI (kept at phone width), the theme toggle on the right, in this site's red
   accent on hover and focus, the same bar as the hashira, rogue and SoMi sites.
 - **Phone:** one-column grid, no horizontal overflow, the emblem above the title, Projects and
-  Releases hidden from the nav, the 2×2 stats, nothing clipped in the tiles or the timeline.
+  Releases behind the nav's Menu button, the 2×2 stats, nothing clipped in the tiles or the timeline.
 - **Desktop:** three-column grid, the hero emblem beside the title, a 4-up stats row.
 - **Light and dark:** text contrast on cards and pills, the accent (`#b80f0f` light,
   `#ff4d4d` dark), tile link colours (`--cc`, darkened on light), and the glow on the emblem.

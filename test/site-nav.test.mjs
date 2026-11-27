@@ -34,9 +34,9 @@ function siteNav(html) {
   const script = /<script\b[^>]*type=["']?application\/json["']?[^>]*>([\s\S]*?)<\/script>/.exec(inner);
   const config = { ...(script ? parse(script[1]) ?? {} : {}) };
   for (const [k, v] of Object.entries(attrs)) config[k] = k === 'nav' || k === 'home_link' ? parse(v) : v;
-  // The .fb links are the no-script stand-ins the kit hides once defined, so they are not its extras.
+  // The slot="fallback" links show only until the kit defines the element, so they are not its extras.
   const extras = [...inner.replace(/<script\b[\s\S]*?<\/script>/g, '').matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)]
-    .filter((m) => !/\bfb\b/.test(attrsOf(m[1]).class ?? ''))
+    .filter((m) => !('slot' in attrsOf(m[1])))
     .map((m) => ({ label: unescape(m[2].replace(/<[^>]*>/g, '')).trim(), href: attrsOf(m[1]).href ?? null }));
   const nav = Array.isArray(config.nav) ? config.nav : [];
   return { count: 1, attrs, config, items: [...nav, ...extras] };
@@ -204,8 +204,7 @@ test('without script every page still has the home link, Projects, Releases, Pul
   }
 });
 
-test('the stand-in links hide once the kit defines <site-nav>, and the page\'s own nav links get the accent focus ring', () => {
+test('without the kit only the fallback brand shows: the slot="brand" span waits for the kit\'s ready', () => {
   const { html } = build([released]).home;
-  assert.ok(html.includes('site-nav:defined>a.fb{display:none}'));
-  assert.ok(html.includes('site-nav>a:focus-visible{outline:2px solid var(--accent)'));
+  assert.ok(html.includes('site-nav:not([ready])>[slot=brand]{display:none}'));
 });

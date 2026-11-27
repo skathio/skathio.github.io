@@ -20,7 +20,9 @@ GH_TOKEN=$(gh auth token) node scripts/ci-rules.mjs [--apply]   # ci-required ru
   `stringly-js` and `remote`. They are expected: the fixture deliberately carries bad manifests,
   a PR in `badsvg` whose URL is wrong ("pull request skipped"), and a failing run in `remote`
   whose URL is wrong ("failing workflow run skipped").
-- Prefer `build:fixture` for any local check. The live build hits the GitHub API.
+- Prefer `build:fixture` for any local check. The live build hits the GitHub API. A fixture build
+  has no `_kit/`, so it shows system colours and fonts, not the palette: add the kit (the
+  `visual-check` script does) before judging how the page looks.
 
 ## Layout
 
@@ -46,10 +48,13 @@ Output in `dist/`: `index.html`, `projects.json` (the public feed), `tiles/<repo
 
 The nav on every page is hashira's `<site-nav>` (`top()` in `render.mjs`), loaded from `/_kit/`
 with the kit's `theme.js` and `tokens.css`; this site's own tokens and accent override the kit's.
-Projects and Releases are its `nav` JSON items (hidden at phone width by the kit). Pull requests
-and CI are links in its extras slot, so they stay at phone width and carry `aria-current`. No Docs
-link. Plain `.fb` links stand in for the brand, Projects and Releases until the kit defines
-`<site-nav>`, so a page without script, or a fixture build (no `_kit/`), still has a full row of links.
+It is `role="navigation" aria-label="Site"`, so the landmark is there without script. Projects and
+Releases are its `nav` JSON items (behind the kit's menu at phone width). Pull requests and CI are
+links in its extras slot, so they stay at phone width and carry `aria-current`. No Docs link. A
+`<span slot="brand">` gives the kit the styled "skath*io*". `<a slot="fallback">` links stand in for
+the brand, Projects and Releases until the kit is ready, so a page without script still has a full
+row of links. The palette and type come from the kit's `tokens.css`; the page sets only
+`--site-accent`/`--site-accent-dark` and its own tokens, so a build with no `_kit/` is unstyled.
 
 ## Security model (do not weaken)
 
@@ -74,8 +79,8 @@ value (`esc`, `isHexColour`, `httpsUrl`, `tilePath`). Keep both layers.
   added by the deploy's `site-kit` step, so the build never writes it. When the org gets a new repo,
   add its name to the list in `test/build.test.mjs` ("the source tree has no top-level folder
   named after a project repo"). Never add a top-level folder here named after a repo.
-- **CSS lives in a JS template string** (`CSS` in `render.mjs`). Dark tokens are the `DARK`
-  string, applied under `prefers-color-scheme: dark` unless `data-theme=light`, and under
+- **CSS lives in a JS template string** (`CSS` in `render.mjs`). Dark tokens (this site's own,
+  not the kit's palette) are the `DARK` string, applied under `prefers-color-scheme: dark` unless `data-theme=light`, and under
   `data-theme=dark`. Change both themes together.
 - **Tests assert on HTML substrings** in `test/render.test.mjs`. Change copy or markup and those
   tests must change with it.
@@ -91,7 +96,8 @@ This repo renders a website. **Every change that can affect what renders** (`src
 `src/build.mjs`, `brand/`, anything in `collect.mjs` that changes tile data) needs a visual
 check before the PR:
 
-1. `npm run build:fixture`, then serve `dist/` and take screenshots at **phone (390×844)** and
+1. `npm run build:fixture`, add hashira's kit as `dist/_kit/` (the palette comes from it; the
+   `visual-check` script does both), then serve `dist/` and take screenshots at **phone (390×844)** and
    **desktop (1280×800)** widths, in **light and dark** mode: four full-page shots.
 2. Look at each screenshot yourself: layout, overflow at phone width, contrast in both themes,
    the theme button, the tiles and the releases timeline.
@@ -106,7 +112,9 @@ cannot affect the page (CI, docs, tests only) do not need it. Say so in the PR.
   only the `ci` job runs: hashira's reusable `static-webapp-ci.yml@v3`, with jobs
   `ci / setup`, `ci / test` (`npm test` with coverage), `ci / scan-suite` (security scans),
   `ci / quality-gate` (SoMi's quality gate, at its default) and `ci / build-and-upload`
-  (`npm run build:fixture`, offline). A PR never reaches the org.
+  (`npm run build:fixture`, offline, then hashira's site kit into `dist/_kit/` through
+  `site_kit: true`, so the PR's artifact renders the nav the deploy serves). The `ci` job holds no
+  `id-token` or `pages` grant, and neither does `build`; only `deploy` does. A PR never reaches the org.
 - On push to `main`, hourly (`17 * * * *`), on `repository_dispatch` (`project-released`,
   `project-updated`) and by hand, `ci` is skipped and this repo's own `build` and `deploy` jobs
   run instead: `npm test`, a live build with `HOMEPAGE_READ_TOKEN` (or the job token), then

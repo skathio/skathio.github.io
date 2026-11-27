@@ -181,7 +181,7 @@ test('ci.yml points all four hashira refs at the same @v3 tag and keeps the ci j
   const ciJob = /\n {2}ci:\n([\s\S]*?)\n {2}\S/.exec(yml)[1];
   const perms = /permissions:\n((?: {6}.*\n)+)/.exec(`${ciJob}\n`)[1];
   const granted = Object.fromEntries([...perms.matchAll(/^ {6}([\w-]+): (\w+)/gm)].map((m) => [m[1], m[2]]));
-  assert.deepEqual(granted, { contents: 'read', 'id-token': 'write', pages: 'write', 'pull-requests': 'write', 'security-events': 'write' });
+  assert.deepEqual(granted, { contents: 'read', 'pull-requests': 'write', 'security-events': 'write' });
 });
 
 test('no workflow runs the ci-rules script', () => {
