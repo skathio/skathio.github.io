@@ -20,7 +20,9 @@ GH_TOKEN=$(gh auth token) node scripts/ci-rules.mjs [--apply]   # ci-required ru
   `stringly-js` and `remote`. They are expected: the fixture deliberately carries bad manifests,
   a PR in `badsvg` whose URL is wrong ("pull request skipped"), and a failing run in `remote`
   whose URL is wrong ("failing workflow run skipped").
-- Prefer `build:fixture` for any local check. The live build hits the GitHub API.
+- Prefer `build:fixture` for any local check. The live build hits the GitHub API. A fixture build
+  has no `_kit/`, so it shows system colours and fonts, not the palette: add the kit (the
+  `visual-check` script does) before judging how the page looks.
 
 ## Layout
 
@@ -94,7 +96,8 @@ This repo renders a website. **Every change that can affect what renders** (`src
 `src/build.mjs`, `brand/`, anything in `collect.mjs` that changes tile data) needs a visual
 check before the PR:
 
-1. `npm run build:fixture`, then serve `dist/` and take screenshots at **phone (390×844)** and
+1. `npm run build:fixture`, add hashira's kit as `dist/_kit/` (the palette comes from it; the
+   `visual-check` script does both), then serve `dist/` and take screenshots at **phone (390×844)** and
    **desktop (1280×800)** widths, in **light and dark** mode: four full-page shots.
 2. Look at each screenshot yourself: layout, overflow at phone width, contrast in both themes,
    the theme button, the tiles and the releases timeline.
@@ -109,7 +112,9 @@ cannot affect the page (CI, docs, tests only) do not need it. Say so in the PR.
   only the `ci` job runs: hashira's reusable `static-webapp-ci.yml@v3`, with jobs
   `ci / setup`, `ci / test` (`npm test` with coverage), `ci / scan-suite` (security scans),
   `ci / quality-gate` (SoMi's quality gate, at its default) and `ci / build-and-upload`
-  (`npm run build:fixture`, offline). A PR never reaches the org.
+  (`npm run build:fixture`, offline, then hashira's site kit into `dist/_kit/` through
+  `site_kit: true`, so the PR's artifact renders the nav the deploy serves). The `ci` job holds no
+  `id-token` or `pages` grant, and neither does `build`; only `deploy` does. A PR never reaches the org.
 - On push to `main`, hourly (`17 * * * *`), on `repository_dispatch` (`project-released`,
   `project-updated`) and by hand, `ci` is skipped and this repo's own `build` and `deploy` jobs
   run instead: `npm test`, a live build with `HOMEPAGE_READ_TOKEN` (or the job token), then

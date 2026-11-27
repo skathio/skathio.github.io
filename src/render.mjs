@@ -92,23 +92,25 @@ export function timeline(projects) {
 
 // Only this site's own tokens: the palette, type and colour-scheme come from the kit's tokens.css,
 // loaded first, and the kit derives --accent from --site-accent and --site-accent-dark.
+// The body's fallbacks are system colours, not a palette, so a page without the kit stays readable.
 const DARK = '--glow:rgba(255,40,40,.45);--ok:#5cc98a;--wait:#e2b04a;--info:#7fb0ff';
 const CSS = `
 :root{--site-accent:#b80f0f;--site-accent-dark:#ff4d4d;--glow:rgba(184,15,15,.22);--ok:#1d7a45;--wait:#8a5a00;--info:#1f5fbf}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){${DARK}}}
 :root[data-theme=dark]{${DARK}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--canvas);color:var(--ink);font:16px/1.6 var(--sans)}
+body{margin:0;background:var(--canvas,Canvas);color:var(--ink,CanvasText);font:16px/1.6 var(--sans,system-ui,sans-serif)}
 a{color:inherit;text-decoration:none}
 a:hover{text-decoration:underline}
 ul,ol{list-style:none;margin:0;padding:0}
 /* The kit's tokens.css holds the undefined site-nav's box, and its slotted links get the kit's
    colour, hover and focus. These rules lay out the slot="fallback" links, shown only until the kit
-   is ready (no script, or the kit failed to load); the brand span waits for the kit's brand link. */
+   is ready (no script, or the kit failed to load), at the kit's own gap so they sit where its links
+   will; the brand span waits for the kit's brand link. */
 /* The page's own a{color:inherit} outranks the kit's ::slotted(a) colour, so the links state it again. */
 site-nav>a{color:var(--muted)}
 site-nav>a:hover{color:var(--accent);text-decoration:none}
-site-nav:not([ready])>a{margin-right:16px;white-space:nowrap}
+site-nav:not([ready])>a{margin-right:var(--nav-gap,28px);white-space:nowrap}
 site-nav:not([ready])>[slot=brand]{display:none}
 site-nav>a.brand{display:inline-flex;gap:8px;align-items:center;vertical-align:middle;color:var(--ink);font-weight:800}
 site-nav>[slot=brand]{display:flex;gap:8px;align-items:center}
@@ -182,8 +184,8 @@ const orgName = (org) => esc(org).replace(/io$/, '<span class="io">io</span>');
 
 // The head and nav every page shares. `up` is the path back to the site root: '' on the homepage
 // and '../' on /prs/ and /ci/. The nav is hashira's <site-nav>, loaded from /_kit/ (site-kit copies
-// it there at deploy). Projects and Releases are its `nav` items, which the kit hides at phone
-// width like every site's section links. Pull requests and CI are its extras, links in the page's
+// it there at deploy). Projects and Releases are its `nav` items, which the kit puts behind its menu
+// button at phone width like every site's section links. Pull requests and CI are its extras, links in the page's
 // own DOM: they stay visible at phone width and carry aria-current on their own page.
 export const top = ({ org, title, description, up, hasReleases, current = null }) => {
   const nav = [{ label: 'Projects', href: `${up}#projects` }, ...(hasReleases ? [{ label: 'Releases', href: `${up}#releases` }] : [])];

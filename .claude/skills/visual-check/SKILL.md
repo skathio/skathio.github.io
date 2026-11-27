@@ -49,7 +49,7 @@ Open each PNG with the Read tool and check:
   Pull requests and CI (kept at phone width), the theme toggle on the right, in this site's red
   accent on hover and focus, the same bar as the hashira, rogue and SoMi sites.
 - **Phone:** one-column grid, no horizontal overflow, the emblem above the title, Projects and
-  Releases hidden from the nav, the 2×2 stats, nothing clipped in the tiles or the timeline.
+  Releases behind the nav's Menu button, the 2×2 stats, nothing clipped in the tiles or the timeline.
 - **Desktop:** three-column grid, the hero emblem beside the title, a 4-up stats row.
 - **Light and dark:** text contrast on cards and pills, the accent (`#b80f0f` light,
   `#ff4d4d` dark), tile link colours (`--cc`, darkened on light), and the glow on the emblem.

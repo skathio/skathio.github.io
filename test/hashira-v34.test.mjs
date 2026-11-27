@@ -105,7 +105,11 @@ test('the fallback brand link shows the mark at the kit\'s 24px, not 26px', () =
     const byAttr = a.width === '24' && a.height === '24';
     const byCss = /site-nav[^{}]*img\{[^}]*width:24px[^}]*height:24px/.test(css) || /site-nav[^{}]*img\{[^}]*height:24px[^}]*width:24px/.test(css);
     assert.ok(byAttr || byCss, `${name}: the mark is 24px`);
-    assert.ok(!/26px/.test(css), `${name}: no 26px left`);
+    // Only the nav's own rules: 26px elsewhere on the page (the releases timeline) is not the mark.
+    const navRules = [...css.matchAll(/([^{}]*)\{([^}]*)\}/g)].filter((m) => /site-nav|\.brand/.test(m[1])).map((m) => m[2]).join(';');
+    assert.ok(!/26px/.test(navRules), `${name}: no 26px left in the nav's rules`);
+    assert.notEqual(a.width, '26', `${name}: width attribute`);
+    assert.notEqual(a.height, '26', `${name}: height attribute`);
   }
 });
 

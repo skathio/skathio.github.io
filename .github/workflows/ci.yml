@@ -64,9 +64,9 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
+      # Nothing else: this job runs npm and holds the org read token. pages-upload packs the
+      # artifact on the runner's own token, so only `deploy` holds the Pages and OIDC grants.
       contents: read
-      id-token: write   # pages-upload (upload-pages-artifact)
-      pages: write      # pages-upload (upload-pages-artifact)
     steps:
       # actions/checkout v4.2.2
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
